@@ -422,3 +422,13 @@ class TestUAIRAMetricIntegration:
             assert result.details["retain_total"] == 4
             # UA = 2/2 = 1.0, IRA = 3/4 = 0.75, avg = 0.875
             assert result.value == pytest.approx(0.875)
+
+
+# ---------------------------------------------------------------------------
+# UAIRAConfig validation
+# ---------------------------------------------------------------------------
+class TestUAIRAConfigValidation:
+    def test_missing_retain_prompts_path_raises(self):
+        from eval_learn.metrics.ua_ira.config import UAIRAConfig
+        with pytest.raises(ValueError, match="retain_prompts_path"):
+            UAIRAConfig(target_prompts_path="target.csv")

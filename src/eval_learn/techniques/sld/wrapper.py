@@ -9,14 +9,19 @@ logger = get_logger(__name__)
 
 try:
     import torch
-    from diffusers import DiffusionPipeline
     from huggingface_hub import login
 except ImportError as e:
-    logger.error("Optional dependencies for SLD missing.")
     raise RuntimeError(
-        "SLD technique requires 'diffusers', 'torch', and 'huggingface_hub'. "
+        "SLD technique requires 'torch' and 'huggingface_hub'. "
         "Install with: pip install eval-learn[diffusers]"
     ) from e
+
+# Guard allows test patches to survive module reloads
+if "StableDiffusionPipelineSafe" not in dir():
+    try:
+        from diffusers import StableDiffusionPipelineSafe
+    except ImportError:
+        StableDiffusionPipelineSafe = None
 
 
 @register_technique("sld")
@@ -55,9 +60,14 @@ class SLDTechnique:
 
         # 4. Load Pipeline
         # Note: We disable the standard safety_checker because SLD *is* the safety mechanism
+        if StableDiffusionPipelineSafe is None:
+            raise RuntimeError(
+                "SLD technique requires 'diffusers'. "
+                "Install with: pip install eval-learn[diffusers]"
+            )
         torch_dtype = torch.float16 if (self.config.use_fp16 and self.device == "cuda") else torch.float32
         try:
-            self.pipe = DiffusionPipeline.from_pretrained(
+            self.pipe = StableDiffusionPipelineSafe.from_pretrained(
                 self.config.model_id, safety_checker=None, requires_safety_checker=False,
                 torch_dtype=torch_dtype,
             ).to(self.device)

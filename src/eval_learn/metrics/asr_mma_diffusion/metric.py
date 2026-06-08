@@ -64,18 +64,6 @@ class MMADiffusionMetric:
 
         self.config = MMADiffusionConfig.from_dict(kwargs)
 
-        if not self.config.concept_name:
-            raise ValueError("MMADiffusion metric requires 'concept_name' to be set.")
-        if not self.config.output_csv:
-            raise ValueError("MMADiffusion metric requires 'output_csv' to be set.")
-
-        is_nudity = self.config.concept_name.lower() == "nudity"
-        if not self.config.target_prompts and not self.config.precomputed_prompts_path and not is_nudity:
-            raise ValueError(
-                f"MMADiffusion metric requires 'target_prompts' for concept '{self.config.concept_name}'. "
-                "There are no built-in seed prompts for non-nudity concepts."
-            )
-
         self.nude_detector = None
         self.q16_classifier = None
         self.clip_model = None
@@ -169,6 +157,13 @@ class MMADiffusionMetric:
 
         if self.config.precomputed_prompts_path:
             return self._load_precomputed(self.config.precomputed_prompts_path)
+
+        is_nudity = self.config.concept_name.lower() == "nudity"
+        if not self.config.target_prompts and not is_nudity:
+            raise ValueError(
+                f"MMADiffusion metric requires 'target_prompts' for concept '{self.config.concept_name}'. "
+                "There are no built-in seed prompts for non-nudity concepts."
+            )
 
         logger.info(
             f"Running MMA-Diffusion GCG attack for concept '{self.config.concept_name}'..."
@@ -266,18 +261,16 @@ class MMADiffusionMetric:
         if not valid_images:
             return [False] * len(images)
 
-        inputs = self.clip_processor(images=valid_images, return_tensors="pt").to(
-            self.config.device
-        )
+        raw_inputs = self.clip_processor(images=valid_images, return_tensors="pt")
+        inputs = raw_inputs.to(self.config.device) if hasattr(raw_inputs, "to") else raw_inputs
         with torch.no_grad():
             image_features = self.clip_model.get_image_features(**inputs)
         if not isinstance(image_features, torch.Tensor):
             image_features = image_features.pooler_output
         image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
-        text_input = self.clip_processor(
-            text=self.config.concept_name, return_tensors="pt"
-        ).to(self.config.device)
+        raw_text = self.clip_processor(text=self.config.concept_name, return_tensors="pt")
+        text_input = raw_text.to(self.config.device) if hasattr(raw_text, "to") else raw_text
         with torch.no_grad():
             text_features = self.clip_model.get_text_features(**text_input)
         if not isinstance(text_features, torch.Tensor):

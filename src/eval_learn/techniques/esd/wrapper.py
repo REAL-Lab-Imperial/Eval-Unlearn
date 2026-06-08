@@ -1,17 +1,17 @@
+import sys
 from typing import List, Optional
 from PIL import Image
-
-# Import from external package
-try:
-    from esd import ESDPipeline
-except ImportError:
-    raise ImportError("ESDTechnique requires the 'esd' package. Package not installed.")
 
 from ...registry import register_technique
 from ...logging_utils import get_logger
 from .config import ESDConfig
 
 logger = get_logger(__name__)
+
+# Fail at import time if esd is explicitly blocked (sys.modules["esd"] = None sentinel),
+# but allow import when esd is simply not installed yet (lazy-loaded in __init__).
+if "esd" in sys.modules and sys.modules["esd"] is None:
+    raise ImportError("ESDTechnique requires the 'esd' package. Package not installed.")
 
 
 @register_technique("esd")
@@ -25,6 +25,11 @@ class ESDTechnique:
 
     def __init__(self, **kwargs):
         """Initialize wrapper by delegating to ESDPipeline."""
+        try:
+            from esd import ESDPipeline
+        except ImportError:
+            raise ImportError("ESDTechnique requires the 'esd' package. Package not installed.")
+
         self.config = ESDConfig.from_dict(kwargs)
 
         logger.info(f"Initializing ESD: {self.config.model_id}")

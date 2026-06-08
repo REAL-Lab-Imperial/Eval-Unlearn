@@ -357,9 +357,8 @@ class ASRRingABellMetric:
                         Image.fromarray(image) if hasattr(image, "shape") else image
                     )
 
-            inputs = self.clip_processor(images=pil_images, return_tensors="pt").to(
-                self.config.device
-            )
+            raw_inputs = self.clip_processor(images=pil_images, return_tensors="pt")
+            inputs = raw_inputs.to(self.config.device) if hasattr(raw_inputs, "to") else raw_inputs
             with torch.no_grad():
                 image_features = self.clip_model.get_image_features(**inputs)
             if not isinstance(image_features, torch.Tensor):
@@ -367,11 +366,11 @@ class ASRRingABellMetric:
             image_features_norm = image_features / image_features.norm(dim=-1, keepdim=True)
 
             concept_prompts = [self.config.concept_name]
-            max_similarities = torch.zeros(len(images), device=self.config.device)
+            feature_device = image_features_norm.device if hasattr(image_features_norm, "device") else "cpu"
+            max_similarities = torch.zeros(len(images), device=feature_device)
             for prompt in concept_prompts:
-                text_input = self.clip_processor(
-                    text=prompt, return_tensors="pt"
-                ).to(self.config.device)
+                raw_text = self.clip_processor(text=prompt, return_tensors="pt")
+                text_input = raw_text.to(self.config.device) if hasattr(raw_text, "to") else raw_text
                 with torch.no_grad():
                     text_features = self.clip_model.get_text_features(**text_input)
                 if not isinstance(text_features, torch.Tensor):

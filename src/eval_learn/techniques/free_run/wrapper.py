@@ -9,13 +9,19 @@ logger = get_logger(__name__)
 
 try:
     import torch
-    from diffusers import AutoPipelineForText2Image
     from huggingface_hub import login
 except ImportError as e:
     raise RuntimeError(
-        "FreeRunTechnique requires 'diffusers', 'torch', and 'huggingface_hub'. "
+        "FreeRunTechnique requires 'torch' and 'huggingface_hub'. "
         "Install with: pip install eval-learn[diffusers]"
     ) from e
+
+# Guard allows test patches to survive module reloads
+if "DiffusionPipeline" not in dir():
+    try:
+        from diffusers import DiffusionPipeline
+    except ImportError:
+        DiffusionPipeline = None
 
 
 @register_technique("free_run")
@@ -49,9 +55,14 @@ class FreeRunTechnique:
             except Exception as e:
                 logger.warning(f"Could not log in to Hugging Face Hub: {e}")
 
+        if DiffusionPipeline is None:
+            raise RuntimeError(
+                "FreeRunTechnique requires 'diffusers'. "
+                "Install with: pip install eval-learn[diffusers]"
+            )
         torch_dtype = torch.float16 if (self.config.use_fp16 and self.device == "cuda") else torch.float32
         try:
-            self.pipe = AutoPipelineForText2Image.from_pretrained(
+            self.pipe = DiffusionPipeline.from_pretrained(
                 self.config.model_id,
                 torch_dtype=torch_dtype,
             ).to(self.device)

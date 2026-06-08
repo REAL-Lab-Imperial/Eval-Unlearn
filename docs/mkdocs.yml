@@ -21,7 +21,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - Concepts: concepts.md
-  - Index: index.md
+  - Demos & Tutorials: demos.md
   - CLI: cli.md
   - Techniques:
     - Overview: techniques/index.md
@@ -56,6 +56,7 @@ nav:
     - ASR P4D: metrics/asr_p4d.md
     - ASR Ring-a-Bell: metrics/asr-ring-a-bell.md
     - ASR MMA-Diffusion: metrics/asr_mma-diffusion.md
+  - Contributing: contributing.md
 
 markdown_extensions:
   - admonition

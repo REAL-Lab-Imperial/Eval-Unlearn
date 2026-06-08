@@ -1,6 +1,7 @@
 from typing import Optional
 
 from torch.utils.data import DataLoader
+from datasets import load_dataset as hf_load_dataset
 
 from ..types import Dataset
 from ..registry import register_dataset
@@ -47,8 +48,6 @@ def load_i2p_csv(
         batch_size: Number of prompts per batch.
         token:      HF token (falls back to HF_TOKEN env var).
     """
-    from datasets import load_dataset as hf_load_dataset
-
     cfg = load_hf_config("i2p")
     caption_col = cfg["caption_col"]
     concept_col = cfg.get("concept_col", "categories")

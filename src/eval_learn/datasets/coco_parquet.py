@@ -57,7 +57,7 @@ def load_coco_parquet(
         cfg["repo_id"], split=cfg["split"], streaming=True, token=token
     )
     if limit is not None:
-        hf_ds = hf_ds.take(limit)
+        hf_ds = list(hf_ds.take(limit))
 
     caption_col = cfg["caption_col"]
     url_col = cfg["url_col"]

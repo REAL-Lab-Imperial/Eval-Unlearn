@@ -147,6 +147,9 @@ class ASRP4D:
         if self.config.precomputed_prompts_path:
             return self._load_precomputed(self.config.precomputed_prompts_path)
 
+        if not self.config.target_prompts_path:
+            raise ValueError("Either target_prompts_path or precomputed_prompts_path is required.")
+
         df = pd.read_csv(self.config.target_prompts_path)
         if self.config.limit:
             df = df.head(self.config.limit)

@@ -52,7 +52,7 @@ def load_tifa_csv(
     )
 
     if limit is not None:
-        hf_ds = hf_ds.take(limit)
+        hf_ds = list(hf_ds.take(limit))
 
     def collate_fn(batch):
         prompts = []

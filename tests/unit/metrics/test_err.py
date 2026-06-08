@@ -1,6 +1,6 @@
 """Unit tests for ERR (Erasing-Retention-Robustness) metric."""
 
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, MagicMock, patch
 import pytest
 import torch
 from PIL import Image
@@ -246,3 +246,97 @@ class TestERRMetricIntegration:
         assert result.details["forgetting"] is not None
         assert result.details["retention"] is not None
         assert result.details["adversarial"] is not None
+
+
+# ---------------------------------------------------------------------------
+# NudeDetector=None, string-path, exception paths
+# ---------------------------------------------------------------------------
+class TestERRCoverageGaps:
+    def test_init_raises_when_nudenet_none(self):
+        with patch("eval_learn.metrics.err.metric.NudeDetector", None), \
+             patch("eval_learn.metrics.err.metric.CLIPModel") as mc, \
+             patch("eval_learn.metrics.err.metric.CLIPProcessor") as mp:
+            m = MagicMock(); m.to.return_value = m
+            mc.from_pretrained.return_value = m
+            mp.from_pretrained.return_value = MagicMock()
+            with pytest.raises(RuntimeError, match="nudenet"):
+                ERRMetric(device="cpu")
+
+    def test_check_adversarial_string_path_safe(self, tmp_path):
+        metric = _make_err_metric()
+        img_path = str(tmp_path / "img.png")
+        Image.new("RGB", (16, 16)).save(img_path)
+        metric.nude_detector = MagicMock()
+        metric.nude_detector.detect.return_value = []
+        assert metric._check_adversarial(img_path) is False
+
+    def test_check_adversarial_string_path_unsafe(self, tmp_path):
+        metric = _make_err_metric()
+        img_path = str(tmp_path / "img.png")
+        Image.new("RGB", (16, 16)).save(img_path)
+        metric.nude_detector = MagicMock()
+        metric.nude_detector.detect.return_value = [
+            {"class": "FEMALE_BREAST_EXPOSED", "score": 0.99}
+        ]
+        assert metric._check_adversarial(img_path) is True
+
+    def test_check_adversarial_exception_returns_none(self):
+        metric = _make_err_metric()
+        metric.nude_detector = MagicMock()
+        metric.nude_detector.detect.side_effect = RuntimeError("crash")
+        with patch("tempfile.mkstemp", return_value=(0, "/tmp/err_gap.png")), \
+             patch("os.close"), patch("os.path.exists", return_value=True), \
+             patch("os.remove"):
+            assert metric._check_adversarial(Image.new("RGB", (16, 16))) is None
+
+    def test_check_adversarial_cleanup_oserror(self):
+        metric = _make_err_metric()
+        metric.nude_detector = MagicMock()
+        metric.nude_detector.detect.return_value = []
+        with patch("tempfile.mkstemp", return_value=(0, "/tmp/err_gap2.png")), \
+             patch("os.close"), patch("os.path.exists", return_value=True), \
+             patch("os.remove", side_effect=OSError("perm denied")):
+            assert metric._check_adversarial(Image.new("RGB", (16, 16))) is False
+
+    def test_check_concept_presence_exception_returns_none(self):
+        metric = _make_err_metric()
+        metric.processor = MagicMock(side_effect=RuntimeError("model error"))
+        assert metric._check_concept_presence(Image.new("RGB", (16, 16)), "dog") is None
+
+    def test_update_adversarial_with_string_path(self, tmp_path):
+        metric = _make_err_metric()
+        img_path = str(tmp_path / "img.png")
+        Image.new("RGB", (16, 16)).save(img_path)
+        metric.nude_detector = MagicMock()
+        metric.nude_detector.detect.return_value = []
+        metric.update([img_path], ["p"],
+                      {"concepts": ["nudity"], "categories": ["adversarial"]})
+        assert metric._counts["adversarial"]["evaluated"] == 1
+
+    def test_load_dataset_resets_counts_and_delegates(self):
+        metric = _make_err_metric()
+        mock_loader = MagicMock()
+        with patch("eval_learn.datasets.err_composite.load_err_composite", return_value=mock_loader):
+            result = metric.load_dataset()
+        assert result is mock_loader
+        assert all(v["evaluated"] == 0 for v in metric._counts.values())
+
+    def test_check_adversarial_non_image_returns_none(self):
+        metric = _make_err_metric()
+        result = metric._check_adversarial(42)
+        assert result is None
+
+    def test_check_concept_presence_happy_path_returns_bool(self):
+        import torch
+        from PIL import Image as _Image
+        metric = _make_err_metric()
+        mock_inputs = MagicMock()
+        mock_inputs.to.return_value = {}
+        metric.processor.return_value = mock_inputs
+        probs_2d = torch.tensor([[0.8, 0.2]])
+        mock_output = MagicMock()
+        mock_output.logits_per_image.softmax.return_value = probs_2d
+        metric.model.return_value = mock_output
+        img = _Image.new("RGB", (64, 64))
+        result = metric._check_concept_presence(img, "nudity")
+        assert result is True

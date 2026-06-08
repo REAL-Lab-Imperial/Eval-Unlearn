@@ -248,3 +248,256 @@ class TestCompute:
         metric = _make_metric(device="cpu")
         result = metric.compute()
         assert result.value == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Config validation branches
+# ---------------------------------------------------------------------------
+class TestASRRingABellConfig:
+    def test_invalid_detector_raises(self):
+        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        with pytest.raises(ValueError, match="detector must be one of"):
+            ASRRingABellConfig(concept_name="nudity", detector="bad")
+
+    def test_nudenet_on_non_nudity_raises(self):
+        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        with pytest.raises(ValueError, match="only valid for nudity"):
+            ASRRingABellConfig(concept_name="dogs", detector="nudenet")
+
+    def test_q16_threshold_out_of_range_raises(self):
+        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        with pytest.raises(ValueError, match="q16_threshold"):
+            ASRRingABellConfig(concept_name="nudity", q16_threshold=2.0)
+
+    def test_similarity_threshold_out_of_range_raises(self):
+        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        with pytest.raises(ValueError, match="similarity_threshold"):
+            ASRRingABellConfig(concept_name="nudity", similarity_threshold=-0.5)
+
+
+# ---------------------------------------------------------------------------
+# Metric __init__ and helper branches not covered by existing tests
+# ---------------------------------------------------------------------------
+def _make_nudenet_metric():
+    """Create a ring-a-bell metric with detector='nudenet' and mocked externals."""
+    import tempfile, csv, os
+    from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+    tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
+    csv.writer(tmp).writerow(["prompt"])
+    csv.writer(tmp).writerow(["a test prompt"])
+    tmp.close()
+    with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+         patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector") as mock_nd:
+        mock_cm.from_pretrained.return_value = MagicMock()
+        mock_cp.from_pretrained.return_value = MagicMock()
+        mock_nd.return_value = MagicMock()
+        metric = ASRRingABellMetric(
+            concept_name="nudity",
+            seed_prompts_csv=tmp.name,
+            enable_discovery=False,
+            detector="nudenet",
+            device="cpu",
+        )
+    os.unlink(tmp.name)
+    return metric
+
+
+class TestASRRingABellMetricBranches:
+    def test_auto_detector_resolves_to_nudenet_for_nudity(self):
+        import tempfile, csv, os
+        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
+        csv.writer(tmp).writerow(["prompt"])
+        tmp.close()
+        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+            mock_cm.from_pretrained.return_value = MagicMock()
+            mock_cp.from_pretrained.return_value = MagicMock()
+            metric = ASRRingABellMetric(
+                concept_name="nudity",
+                seed_prompts_csv=tmp.name,
+                enable_discovery=False,
+                detector="auto",
+                device="cpu",
+            )
+        os.unlink(tmp.name)
+        assert metric._detector == "nudenet"
+
+    def test_nudenet_none_raises_runtime_error(self):
+        import tempfile, csv, os
+        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
+        csv.writer(tmp).writerow(["prompt"])
+        tmp.close()
+        try:
+            with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+                 patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+                 patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", None):
+                mock_cm.from_pretrained.return_value = MagicMock()
+                mock_cp.from_pretrained.return_value = MagicMock()
+                with pytest.raises(RuntimeError, match="nudenet"):
+                    ASRRingABellMetric(
+                        concept_name="nudity",
+                        seed_prompts_csv=tmp.name,
+                        enable_discovery=False,
+                        detector="nudenet",
+                        device="cpu",
+                    )
+        finally:
+            os.unlink(tmp.name)
+
+    def test_concept_vector_path_warning_when_discovery_disabled(self):
+        import tempfile, csv, os
+        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
+        csv.writer(tmp).writerow(["prompt"])
+        tmp.close()
+        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+            mock_cm.from_pretrained.return_value = MagicMock()
+            mock_cp.from_pretrained.return_value = MagicMock()
+            metric = ASRRingABellMetric(
+                concept_name="nudity",
+                seed_prompts_csv=tmp.name,
+                enable_discovery=False,
+                concept_vector_path="some_vector.npy",
+                device="cpu",
+            )
+        os.unlink(tmp.name)
+        assert metric is not None
+
+    def test_generated_prompts_output_warning_when_discovery_disabled(self):
+        import tempfile, csv, os
+        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
+        csv.writer(tmp).writerow(["prompt"])
+        tmp.close()
+        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+            mock_cm.from_pretrained.return_value = MagicMock()
+            mock_cp.from_pretrained.return_value = MagicMock()
+            metric = ASRRingABellMetric(
+                concept_name="nudity",
+                seed_prompts_csv=tmp.name,
+                enable_discovery=False,
+                generated_prompts_output="/tmp/out.csv",
+                device="cpu",
+            )
+        os.unlink(tmp.name)
+        assert metric is not None
+
+    def test_is_unsafe_q16_numpy_array_image(self):
+        import numpy as np
+        from PIL import Image
+        metric = _make_metric()
+        metric._detector = "q16"
+        metric.q16_classifier = MagicMock()
+        metric.q16_classifier.classify_batch.return_value = [("safe", 0.9)]
+        arr = np.zeros((64, 64, 3), dtype=np.uint8)
+        result = metric._is_unsafe_q16([arr])
+        assert result == [False]
+
+    def test_is_unsafe_q16_invalid_image_type_returns_false(self):
+        metric = _make_metric()
+        metric._detector = "q16"
+        metric.q16_classifier = MagicMock()
+        result = metric._is_unsafe_q16([42])
+        assert result == [False]
+
+    def test_is_unsafe_q16_empty_pil_list_returns_false(self):
+        metric = _make_metric()
+        metric._detector = "q16"
+        metric.q16_classifier = MagicMock()
+        result = metric._is_unsafe_q16([42, "not_an_image"])
+        assert result == [False, False]
+
+    def test_is_unsafe_q16_mixed_valid_and_invalid(self):
+        from PIL import Image
+        metric = _make_metric()
+        metric._detector = "q16"
+        metric.q16_classifier = MagicMock()
+        metric.q16_classifier.classify_batch.return_value = [("inappropriate", 0.95)]
+        img = Image.new("RGB", (64, 64))
+        result = metric._is_unsafe_q16([img, 42])
+        assert result == [True, False]
+
+    def test_evaluate_batch_clip_uses_pooler_output(self):
+        import torch
+        from PIL import Image
+        metric = _make_metric()
+        img = Image.new("RGB", (64, 64))
+        real_feat = torch.ones(1, 512)
+        mock_out = MagicMock()
+        mock_out.pooler_output = real_feat
+        mock_inputs = MagicMock()
+        mock_inputs.to.return_value = {}
+        metric.clip_processor.return_value = mock_inputs
+        metric.clip_model.get_image_features.return_value = mock_out
+        mock_text_out = MagicMock()
+        mock_text_out.pooler_output = real_feat
+        metric.clip_model.get_text_features.return_value = mock_text_out
+        metric.update([img], ["prompt"])
+        assert metric._total == 1
+
+    def test_update_nudenet_oserror_on_remove(self):
+        from PIL import Image
+        metric = _make_nudenet_metric()
+        metric.nude_detector.detect.return_value = []
+        img = Image.new("RGB", (64, 64))
+        with patch("eval_learn.metrics.asr_ring_a_bell.metric.os.remove",
+                   side_effect=OSError("locked")):
+            metric.update([img], ["prompt"])
+        assert metric._total == 1
+
+    def test_concept_vector_path_nonexistent_raises_file_not_found(self):
+        import tempfile, csv, os
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="") as f:
+            csv.writer(f).writerow(["prompt"])
+            seed_csv = f.name
+        try:
+            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            with pytest.raises(FileNotFoundError, match="Concept vector not found"):
+                ASRRingABellMetric(
+                    concept_name="nudity",
+                    seed_prompts_csv=seed_csv,
+                    enable_discovery=True,
+                    concept_vector_path="/nonexistent/vector_that_does_not_exist.npy",
+                    device="cpu",
+                )
+        finally:
+            os.unlink(seed_csv)
+
+    def test_enable_discovery_empty_output_raises_value_error(self, tmp_path):
+        """Lines 210,213-215: enable_discovery path with empty generated prompts."""
+        import csv, os
+
+        seed_csv = str(tmp_path / "seeds.csv")
+        with open(seed_csv, "w", newline="") as f:
+            csv.writer(f).writerows([["prompt"], ["a test prompt"]])
+
+        output_csv = str(tmp_path / "generated.csv")
+
+        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_model_cls, \
+             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls:
+            mock_model = MagicMock()
+            mock_model.to.return_value = mock_model
+            mock_model_cls.from_pretrained.return_value = mock_model
+            mock_proc_cls.from_pretrained.return_value = MagicMock()
+
+            metric = ASRRingABellMetric(
+                concept_name="nudity",
+                seed_prompts_csv=seed_csv,
+                enable_discovery=True,
+                generated_prompts_output=output_csv,
+                device="cpu",
+            )
+
+        # Create empty output file; mock _run_discovery to skip the real GA run
+        open(output_csv, "w").close()
+        with patch.object(metric, "_run_discovery", return_value=None):
+            with pytest.raises(ValueError, match="empty output"):
+                metric.load_dataset()

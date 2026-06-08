@@ -47,7 +47,7 @@ asr = ["nudenet>=3.4.2"]
 fid = ["torchvision>=0.26.0"]
 coco = ["torchvision>=0.26.0"]
 # Development
-dev = ["pytest>=7.0.0", "ruff>=0.0.1", "mypy>=1.0.0"]
+dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff>=0.0.1", "mypy>=1.0.0"]
 all = ["eval-learn[asr,fid,coco,dev]"]
 
 # Note: Technique packages (esd, mace, uce, safree, sld, saeuron)
@@ -101,3 +101,20 @@ testpaths = ["tests"]
 markers = [
     "integration: marks tests that require GPU and real models (deselect with '-m \"not integration\"')",
 ]
+addopts = "--cov=eval_learn --cov-report=term-missing --cov-report=xml -p no:warnings"
+
+[tool.coverage.run]
+source = ["eval_learn"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "except ImportError",
+]
+show_missing = true

@@ -6,19 +6,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# Suppress noisy imports at module level in cli.py
-with patch("eval_learn.runners.SingleBenchmarkRunner"), \
-     patch("eval_learn.runners.MultiBenchmarkRunner"):
-    from eval_learn.cli import (
-        _load_config,
-        _parse_metrics_list,
-        _build_single_runner,
-        _build_multi_runner,
-        cmd_push,
-        cmd_pull,
-        cmd_plugins,
-        main,
-    )
+from eval_learn.cli import (
+    _load_config,
+    _parse_metrics_list,
+    _build_single_runner,
+    _build_multi_runner,
+    cmd_push,
+    cmd_pull,
+    cmd_plugins,
+    main,
+)
 
 
 # ---------------------------------------------------------------------------

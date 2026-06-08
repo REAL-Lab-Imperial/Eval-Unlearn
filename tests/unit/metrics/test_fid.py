@@ -404,3 +404,44 @@ class TestFIDMetricUpdateCompute:
             assert np.isfinite(result.value)
             assert result.details["total_real"] == 20
             assert result.details["total_generated"] == 20
+
+
+# ---------------------------------------------------------------------------
+# _calculate_fid: non-finite covmean triggers regularisation branch
+# ---------------------------------------------------------------------------
+class TestFIDCalculateNonFiniteCovmean:
+    def test_non_finite_covmean_triggers_regularisation(self):
+        mu1 = np.array([0.0, 0.0])
+        mu2 = np.array([1.0, 1.0])
+        sigma1 = np.array([[np.inf, 0.0], [0.0, 1.0]])
+        sigma2 = np.eye(2)
+        fid = _calculate_fid(mu1, sigma1, mu2, sigma2)
+        assert isinstance(fid, float)
+
+
+# ---------------------------------------------------------------------------
+# metrics/__init__.py: except branches when metric modules fail to import
+# ---------------------------------------------------------------------------
+class TestMetricsInitImportFailures:
+    def test_metrics_init_handles_all_import_failures(self):
+        import sys
+        from unittest.mock import patch as _patch
+        metric_modules = [
+            "eval_learn.metrics.asr_p4d.metric",
+            "eval_learn.metrics.asr_i2p.metric",
+            "eval_learn.metrics.fid.metric",
+            "eval_learn.metrics.err.metric",
+            "eval_learn.metrics.tifa.metric",
+            "eval_learn.metrics.clip_score.metric",
+            "eval_learn.metrics.ua_ira.metric",
+            "eval_learn.metrics.asr_ring_a_bell.metric",
+            "eval_learn.metrics.asr_mma_diffusion.metric",
+        ]
+        # Patch specific metric modules to None so their imports raise ImportError.
+        # Only remove the top-level eval_learn.metrics so its __init__ is re-executed;
+        # patch.dict restores the original module on exit.
+        patches = {m: None for m in metric_modules}
+        with _patch.dict(sys.modules, patches):
+            sys.modules.pop("eval_learn.metrics", None)
+            import eval_learn.metrics  # noqa: F401 — must not raise
+        assert True

@@ -64,44 +64,44 @@ def main():
         #     "CoGFD — Concept Graph-based high-level Feature Decoupling",
         #     "examples/nudity/cogfd.json",
         # ),
-        (
-            "SSD — Selective Synaptic Dampening",
-            "examples/nudity/ssd.json",
-        ),
+        # (
+        #     "SSD — Selective Synaptic Dampening",
+        #     "examples/nudity/ssd.json",
+        # ),
         # (
         #     "TraSCE — Training-free Stable Concept Editing",
         #     "examples/nudity/trasce.json",
         # ),
         # ("CA — Concept Ablation", "examples/nudity/ca.json"),
-        # (
-        #     "ConceptSteerers",
-        #     "examples/nudity/concept_steerers.json",
-        # ),
-        # (
-        #     "SAeUron — Sparse Autoencoder Unlearning",
-        #     "examples/nudity/saeuron.json",
-        # ),
-        # ("ESD — Erased Stable Diffusion", "examples/nudity/esd.json"),
-        # (
-        #     "MACE — Mass Concept Erasure",
-        #     "examples/nudity/mace.json",
-        # ),
-        # (
-        #     "UCE — Unlearning with Concept Erasure",
-        #     "examples/nudity/uce.json",
-        # ),
-        # (
-        #     "SLD — Safe Latent Diffusion",
-        #     "examples/nudity/sld.json",
-        # ),
-        # (
-        #     "SAFREE — Selective and Attribute Free",
-        #     "examples/nudity/safree.json",
-        # ),
-        # (
-        #     "AdvUnlearn — Adversarial Unlearning",
-        #     "examples/nudity/advunlearn.json",
-        # ),
+        (
+            "ConceptSteerers",
+            "examples/nudity/concept_steerers.json",
+        ),
+        (
+            "SAeUron — Sparse Autoencoder Unlearning",
+            "examples/nudity/saeuron.json",
+        ),
+        ("ESD — Erased Stable Diffusion", "examples/nudity/esd.json"),
+        (
+            "MACE — Mass Concept Erasure",
+            "examples/nudity/mace.json",
+        ),
+        (
+            "UCE — Unlearning with Concept Erasure",
+            "examples/nudity/uce.json",
+        ),
+        (
+            "SLD — Safe Latent Diffusion",
+            "examples/nudity/sld.json",
+        ),
+        (
+            "SAFREE — Selective and Attribute Free",
+            "examples/nudity/safree.json",
+        ),
+        (
+            "AdvUnlearn — Adversarial Unlearning",
+            "examples/nudity/advunlearn.json",
+        ),
     ]
 
     for title, config_path in techniques:

@@ -1,3 +1,4 @@
+import itertools
 from typing import Optional
 
 import torch.utils.data
@@ -112,7 +113,7 @@ def load_err_composite(
         lambda row: i2p_category in [c.strip() for c in (row.get(i2p_cfg["concept_col"]) or "").split(",")]
     )
     if target_limit is not None:
-        i2p_ds = i2p_ds.take(target_limit)
+        i2p_ds = list(itertools.islice(i2p_ds, target_limit))
 
     # --- ERR challenge (retain) ---
     logger.info("Streaming ERR challenge (retain) from %s...", challenge_cfg["repo_id"])
@@ -142,7 +143,7 @@ def load_err_composite(
             token=token,
         )
     if retain_limit is not None:
-        ch_ds = ch_ds.take(retain_limit)
+        ch_ds = list(itertools.islice(ch_ds, retain_limit))
 
     # --- Ring-A-Bell (adversarial) ---
     logger.info("Streaming Ring-A-Bell (adversarial) from %s...", rab_cfg["repo_id"])
@@ -169,7 +170,7 @@ def load_err_composite(
             token=token,
         )
     if adversarial_limit is not None:
-        rab_ds = rab_ds.take(adversarial_limit)
+        rab_ds = list(itertools.islice(rab_ds, adversarial_limit))
 
     # Create merged iterable dataset
     merged_ds = _ERRCompositeIterableDataset(

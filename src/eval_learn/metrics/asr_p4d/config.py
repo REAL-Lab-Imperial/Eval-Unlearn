@@ -161,8 +161,6 @@ class ASRP4DConfig(BaseConfig):
     def __post_init__(self) -> None:
         if not self.concept_name:
             raise ValueError("concept_name must not be empty.")
-        if not self.target_prompts_path and not self.precomputed_prompts_path:
-            raise ValueError("Either target_prompts_path or precomputed_prompts_path is required.")
         if self.erase_id not in _VALID_ERASE_IDS:
             raise ValueError(f"erase_id must be one of {sorted(_VALID_ERASE_IDS)}, got '{self.erase_id}'.")
         if self.variant not in _VALID_VARIANTS:
