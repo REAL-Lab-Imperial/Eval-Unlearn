@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 
 # Import from cli with runners patched to avoid heavy imports
-with patch("eval_learn.runners.SingleBenchmarkRunner"), \
-     patch("eval_learn.runners.MultiBenchmarkRunner"):
-    from eval_learn.cli import (
+with patch("eval_unlearn.runners.SingleBenchmarkRunner"), \
+     patch("eval_unlearn.runners.MultiBenchmarkRunner"):
+    from eval_unlearn.cli import (
         cmd_run,
         cmd_push,
         cmd_pull,
@@ -41,7 +41,7 @@ class TestCmdRun:
         mock_runner = MagicMock()
         mock_runner.run.return_value = {"run_id": "abc123", "metric_result": {}}
 
-        with patch("eval_learn.cli.SingleBenchmarkRunner", return_value=mock_runner):
+        with patch("eval_unlearn.cli.SingleBenchmarkRunner", return_value=mock_runner):
             cmd_run(args)
 
         mock_runner.run.assert_called_once()
@@ -58,7 +58,7 @@ class TestCmdRun:
         mock_runner = MagicMock()
         mock_runner.run.return_value = {"run_id": "abc", "metric_results": {}}
 
-        with patch("eval_learn.cli.MultiBenchmarkRunner", return_value=mock_runner):
+        with patch("eval_unlearn.cli.MultiBenchmarkRunner", return_value=mock_runner):
             cmd_run(args)
 
         mock_runner.run.assert_called_once()
@@ -83,7 +83,7 @@ class TestCmdRun:
         mock_runner = MagicMock()
         mock_runner.run.side_effect = RuntimeError("run crash")
 
-        with patch("eval_learn.cli.SingleBenchmarkRunner", return_value=mock_runner):
+        with patch("eval_unlearn.cli.SingleBenchmarkRunner", return_value=mock_runner):
             with pytest.raises(SystemExit):
                 cmd_run(args)
 
@@ -101,8 +101,8 @@ class TestCmdRun:
         mock_runner = MagicMock()
         mock_runner.run.return_value = {"run_id": "abc"}
 
-        with patch("eval_learn.cli.SingleBenchmarkRunner", return_value=mock_runner), \
-             patch("eval_learn.cli._push_results") as mock_push:
+        with patch("eval_unlearn.cli.SingleBenchmarkRunner", return_value=mock_runner), \
+             patch("eval_unlearn.cli._push_results") as mock_push:
             cmd_run(args)
 
         mock_push.assert_called_once()
@@ -116,7 +116,7 @@ class TestCmdRun:
         path = self._config_file(tmp_path, cfg)
         args = Namespace(config=path, hf_repo=None, hf_path=None, create_pr=False)
 
-        with patch("eval_learn.cli.SingleBenchmarkRunner", side_effect=ValueError("bad config")):
+        with patch("eval_unlearn.cli.SingleBenchmarkRunner", side_effect=ValueError("bad config")):
             with pytest.raises(SystemExit):
                 cmd_run(args)
 
@@ -126,7 +126,7 @@ class TestCmdRun:
 # ---------------------------------------------------------------------------
 class TestPushResults:
     def test_push_results_success(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.return_value = "https://hf.co/commit/abc"
@@ -139,7 +139,7 @@ class TestPushResults:
         mock_sync.push_folder.assert_called_once()
 
     def test_push_results_with_custom_path(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.return_value = "https://hf.co/commit/abc"
@@ -152,7 +152,7 @@ class TestPushResults:
         mock_sync.push_folder.assert_called_once_with(str(tmp_path), "custom/path")
 
     def test_push_results_failure_exits(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.side_effect = RuntimeError("network error")
@@ -170,8 +170,8 @@ class TestPushResults:
 # ---------------------------------------------------------------------------
 class TestCmdModels:
     def test_cmd_models_outputs_technique_table(self, capsys):
-        from eval_learn.techniques._base_models import TECHNIQUE_BASE_MODELS
-        from eval_learn.metrics._base_models import METRIC_MODELS
+        from eval_unlearn.techniques._base_models import TECHNIQUE_BASE_MODELS
+        from eval_unlearn.metrics._base_models import METRIC_MODELS
         cmd_models(Namespace())
         out = capsys.readouterr().out
         assert "Techniques:" in out
@@ -188,7 +188,7 @@ class TestCmdModels:
         assert "Metrics:" in out
 
     def test_cmd_models_handles_configurable_with_choices(self, capsys):
-        from eval_learn.metrics._base_models import MetricModelInfo
+        from eval_unlearn.metrics._base_models import MetricModelInfo
         mock_metric_models = {
             "test_metric": MetricModelInfo(
                 model="some/model",
@@ -197,14 +197,14 @@ class TestCmdModels:
                 choices=frozenset(["openai/clip-vit-large-patch14"]),
             )
         }
-        with patch("eval_learn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
-             patch("eval_learn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
+        with patch("eval_unlearn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
+             patch("eval_unlearn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
             cmd_models(Namespace())
         out = capsys.readouterr().out
         assert "test_metric" in out
 
     def test_cmd_models_handles_configurable_no_choices(self, capsys):
-        from eval_learn.metrics._base_models import MetricModelInfo
+        from eval_unlearn.metrics._base_models import MetricModelInfo
         mock_metric_models = {
             "tifa_test": MetricModelInfo(
                 model="Salesforce/blip2",
@@ -213,14 +213,14 @@ class TestCmdModels:
                 choices=None,
             )
         }
-        with patch("eval_learn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
-             patch("eval_learn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
+        with patch("eval_unlearn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
+             patch("eval_unlearn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
             cmd_models(Namespace())
         out = capsys.readouterr().out
         assert "tifa_test" in out
 
     def test_cmd_models_handles_non_configurable_with_note(self, capsys):
-        from eval_learn.metrics._base_models import MetricModelInfo
+        from eval_unlearn.metrics._base_models import MetricModelInfo
         mock_metric_models = {
             "fid_test": MetricModelInfo(
                 model="Inception V3",
@@ -228,23 +228,23 @@ class TestCmdModels:
                 note="torchvision",
             )
         }
-        with patch("eval_learn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
-             patch("eval_learn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
+        with patch("eval_unlearn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
+             patch("eval_unlearn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
             cmd_models(Namespace())
         out = capsys.readouterr().out
         assert "fid_test" in out
         assert "torchvision" in out
 
     def test_cmd_models_handles_non_configurable_no_note(self, capsys):
-        from eval_learn.metrics._base_models import MetricModelInfo
+        from eval_unlearn.metrics._base_models import MetricModelInfo
         mock_metric_models = {
             "simple_metric": MetricModelInfo(
                 model="some/model",
                 configurable=False,
             )
         }
-        with patch("eval_learn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
-             patch("eval_learn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
+        with patch("eval_unlearn.metrics._base_models.METRIC_MODELS", mock_metric_models), \
+             patch("eval_unlearn.techniques._base_models.TECHNIQUE_BASE_MODELS", {}):
             cmd_models(Namespace())
         out = capsys.readouterr().out
         assert "simple_metric" in out
@@ -266,30 +266,30 @@ class TestMainDispatch:
         mock_runner = MagicMock()
         mock_runner.run.return_value = {"run_id": "abc"}
 
-        with patch("sys.argv", ["eval-learn", "run", "--config", str(cfg_path)]), \
-             patch("eval_learn.cli.SingleBenchmarkRunner", return_value=mock_runner):
+        with patch("sys.argv", ["eval-unlearn", "run", "--config", str(cfg_path)]), \
+             patch("eval_unlearn.cli.SingleBenchmarkRunner", return_value=mock_runner):
             main()
 
     def test_dispatch_plugins_command(self, capsys):
-        with patch("sys.argv", ["eval-learn", "plugins"]), \
-             patch("eval_learn.registry.entrypoints.load_entrypoints"), \
-             patch("eval_learn.registry.local._TECHNIQUES", {}), \
-             patch("eval_learn.registry.local._METRICS", {}), \
-             patch("eval_learn.registry.local._DATASETS", {}):
+        with patch("sys.argv", ["eval-unlearn", "plugins"]), \
+             patch("eval_unlearn.registry.entrypoints.load_entrypoints"), \
+             patch("eval_unlearn.registry.local._TECHNIQUES", {}), \
+             patch("eval_unlearn.registry.local._METRICS", {}), \
+             patch("eval_unlearn.registry.local._DATASETS", {}):
             main()
         out = capsys.readouterr().out
         assert "Techniques:" in out
 
     def test_dispatch_models_command(self, capsys):
-        with patch("sys.argv", ["eval-learn", "models"]):
+        with patch("sys.argv", ["eval-unlearn", "models"]):
             main()
         out = capsys.readouterr().out
         assert "Techniques:" in out
 
     def test_dispatch_push_command(self, tmp_path):
-        with patch("sys.argv", ["eval-learn", "push", "--repo", "org/repo",
+        with patch("sys.argv", ["eval-unlearn", "push", "--repo", "org/repo",
                                 "--local-dir", str(tmp_path)]), \
-             patch("eval_learn.hub.HFSync") as mock_cls:
+             patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.return_value = "https://hf.co"
@@ -297,8 +297,8 @@ class TestMainDispatch:
         mock_sync.push_folder.assert_called_once()
 
     def test_dispatch_pull_command(self):
-        with patch("sys.argv", ["eval-learn", "pull", "--repo", "org/repo"]), \
-             patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("sys.argv", ["eval-unlearn", "pull", "--repo", "org/repo"]), \
+             patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.pull_all.return_value = "/local/results"

@@ -14,8 +14,8 @@ import json
 import torch
 from dotenv import load_dotenv
 
-from eval_learn.runners import MultiBenchmarkRunner
-from eval_learn.logging_utils import get_logger
+from eval_unlearn.runners import MultiBenchmarkRunner
+from eval_unlearn.logging_utils import get_logger
 
 logger = get_logger(__name__)
 

@@ -1,1 +1,1 @@
-"""Unit tests for eval-learn."""
+"""Unit tests for eval-unlearn."""

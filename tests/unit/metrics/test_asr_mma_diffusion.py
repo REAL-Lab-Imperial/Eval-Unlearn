@@ -5,7 +5,7 @@ import tempfile
 from unittest.mock import MagicMock, patch, call
 from PIL import Image
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(10, 20, 30)):
@@ -13,15 +13,15 @@ def _dummy_image(color=(10, 20, 30)):
 
 
 def _make_metric(detector="nudenet", concept="nudity", limit=5, **kwargs):
-    from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+    from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
     mock_gen_cls = MagicMock()
     mock_gen_cls.return_value.generate.return_value = [
         {"adversarial_prompt": f"adv_{i}", "target_prompt": "naked"} for i in range(3)
     ]
-    with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector", MagicMock()), \
-         patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier", MagicMock()), \
-         patch("eval_learn.metrics.asr_mma_diffusion.metric.CLIPModel", MagicMock()), \
-         patch("eval_learn.metrics.asr_mma_diffusion.metric.CLIPProcessor", MagicMock()):
+    with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_mma_diffusion.metric.CLIPModel", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_mma_diffusion.metric.CLIPProcessor", MagicMock()):
         metric = MMADiffusionMetric(
             concept_name=concept,
             output_csv="/tmp/mma_test.csv",
@@ -38,32 +38,32 @@ def _make_metric(detector="nudenet", concept="nudity", limit=5, **kwargs):
 # ---------------------------------------------------------------------------
 class TestMMADiffusionConfig:
     def test_missing_concept_name_raises(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="concept_name must be set"):
             MMADiffusionConfig(output_csv="/tmp/out.csv")
 
     def test_missing_output_csv_raises(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="output_csv must be set"):
             MMADiffusionConfig(concept_name="nudity")
 
     def test_nudenet_on_non_nudity_raises(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="only valid for nudity"):
             MMADiffusionConfig(concept_name="violence", output_csv="/tmp/o.csv", detector="nudenet")
 
     def test_invalid_detector_raises(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="detector must be one of"):
             MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv", detector="bad")
 
     def test_invalid_q16_threshold(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="q16_threshold"):
             MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv", q16_threshold=1.5)
 
     def test_similarity_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
         with pytest.raises(ValueError, match="similarity_threshold"):
             MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv", similarity_threshold=-0.5)
 
@@ -101,8 +101,8 @@ class TestMMALoadDataset:
         csv_path = tmp_path / "pre.csv"
         pd.DataFrame({"adversarial_prompt": ["adv1", "adv2"], "target_prompt": ["t1", "t2"]}).to_csv(csv_path, index=False)
 
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector", MagicMock()):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector", MagicMock()):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="nudity",
                 output_csv="/tmp/out.csv",
@@ -165,11 +165,11 @@ class TestMMAUpdateNudenet:
 # ---------------------------------------------------------------------------
 class TestMMAUpdateQ16:
     def test_inappropriate_counted(self):
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("inappropriate", 0.95)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="violence", output_csv="/tmp/o.csv", detector="q16"
             )
@@ -177,11 +177,11 @@ class TestMMAUpdateQ16:
         assert metric._unsafe_count == 1
 
     def test_appropriate_not_counted(self):
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("non inappropriate", 0.1)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="violence", output_csv="/tmp/o.csv", detector="q16"
             )
@@ -190,11 +190,11 @@ class TestMMAUpdateQ16:
         assert metric._total == 1
 
     def test_q16_batch_error_handled(self):
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.side_effect = RuntimeError("GPU OOM")
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="violence", output_csv="/tmp/o.csv", detector="q16"
             )
@@ -208,15 +208,15 @@ class TestMMAUpdateQ16:
 class TestMMAUpdateCLIP:
     def _make_clip_metric(self, sim_value=0.5):
         import torch
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_mma_diffusion.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_mma_diffusion.metric.CLIPProcessor") as mock_proc:
             mock_model = MagicMock()
             mock_model.get_image_features.return_value = torch.ones(1, 4)
             mock_model.get_text_features.return_value = torch.ones(1, 4)
             mock_cls.from_pretrained.return_value = mock_model
             mock_model.eval.return_value = mock_model
             mock_model.to.return_value = mock_model
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="violence", output_csv="/tmp/o.csv", detector="clip",
                 similarity_threshold=sim_value
@@ -273,8 +273,8 @@ class TestMMACompute:
 class TestMMADiffusionCoverageGaps:
     def test_auto_detector_resolves_to_nudenet_for_nudity(self):
         """Line 75: auto detection for nudity → nudenet."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector"):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector"):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="nudity", output_csv="/tmp/o.csv", detector="auto"
             )
@@ -282,24 +282,24 @@ class TestMMADiffusionCoverageGaps:
 
     def test_nudenet_none_raises_runtime_error(self):
         """Line 79: RuntimeError when NudeDetector is None."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector", None):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector", None):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             with pytest.raises(RuntimeError, match="nudenet"):
                 MMADiffusionMetric(concept_name="nudity", output_csv="/tmp/o.csv",
                                    detector="nudenet")
 
     def test_q16classifier_none_raises_runtime_error(self):
         """Line 88: RuntimeError when Q16Classifier is None."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier", None):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier", None):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             with pytest.raises(RuntimeError, match="q16"):
                 MMADiffusionMetric(concept_name="violence", output_csv="/tmp/o.csv",
                                    detector="q16")
 
     def test_q16_creates_classifier_with_default_model(self):
         """Lines 103-106: Q16Classifier is instantiated in init for q16 detector."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16:
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16:
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(
                 concept_name="violence", output_csv="/tmp/o.csv", detector="q16",
             )
@@ -307,8 +307,8 @@ class TestMMADiffusionCoverageGaps:
 
     def test_clipmodel_none_raises_runtime_error(self):
         """Line 110: RuntimeError when CLIPModel is None."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.CLIPModel", None):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.CLIPModel", None):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             with pytest.raises(RuntimeError, match="transformers"):
                 MMADiffusionMetric(concept_name="violence", output_csv="/tmp/o.csv",
                                    detector="clip")
@@ -318,8 +318,8 @@ class TestMMADiffusionCoverageGaps:
         import pandas as pd
         csv_path = str(tmp_path / "bad.csv")
         pd.DataFrame({"wrong_col": ["a", "b"]}).to_csv(csv_path, index=False)
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector"):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector"):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(concept_name="nudity", output_csv="/tmp/o.csv",
                                         precomputed_prompts_path=csv_path)
         with pytest.raises(ValueError, match="adversarial_prompt"):
@@ -331,8 +331,8 @@ class TestMMADiffusionCoverageGaps:
         csv_path = str(tmp_path / "prompts.csv")
         pd.DataFrame({"adversarial_prompt": [f"p{i}" for i in range(10)],
                       "target_prompt": ["t"] * 10}).to_csv(csv_path, index=False)
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector"):
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector"):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(concept_name="nudity", output_csv="/tmp/o.csv",
                                         precomputed_prompts_path=csv_path, limit=3)
         loader = metric.load_dataset()
@@ -341,8 +341,8 @@ class TestMMADiffusionCoverageGaps:
 
     def test_no_target_prompts_for_non_nudity_raises(self):
         """Line 163: ValueError when non-nudity concept has no target_prompts."""
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16:
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16:
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(concept_name="violence", output_csv="/tmp/o.csv",
                                         detector="q16")
         with pytest.raises(ValueError, match="target_prompts"):
@@ -433,9 +433,9 @@ class TestMMADiffusionCoverageGaps:
         metric.nude_detector.detect.return_value = []
         with patch("tempfile.mkstemp", return_value=(0, "/tmp/fake.png")), \
              patch("os.close"), \
-             patch("eval_learn.metrics.asr_mma_diffusion.metric.os.path.exists",
+             patch("eval_unlearn.metrics.asr_mma_diffusion.metric.os.path.exists",
                    return_value=True), \
-             patch("eval_learn.metrics.asr_mma_diffusion.metric.os.remove",
+             patch("eval_unlearn.metrics.asr_mma_diffusion.metric.os.remove",
                    side_effect=OSError("locked")):
             metric.update([_dummy_image()], ["prompt"])
         assert metric._total == 1

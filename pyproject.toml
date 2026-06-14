@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eval-learn"
+name = "eval-unlearn"
 version = "0.1.6"
 description = "Unlearning Benchmark for Text-to-Image Models"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -36,10 +36,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nikhilr2907/eval-learn"
-Documentation = "https://eval-learn.readthedocs.io"
-Source = "https://github.com/nikhilr2907/eval-learn"
-"Bug Tracker" = "https://github.com/nikhilr2907/eval-learn/issues"
+Homepage = "https://github.com/nikhilr2907/eval-unlearn"
+Documentation = "https://eval-unlearn.readthedocs.io"
+Source = "https://github.com/nikhilr2907/eval-unlearn"
+"Bug Tracker" = "https://github.com/nikhilr2907/eval-unlearn/issues"
 
 [project.optional-dependencies]
 # Metric extras (PyPI packages)
@@ -48,63 +48,63 @@ fid = ["torchvision>=0.26.0"]
 coco = ["torchvision>=0.26.0"]
 # Development
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff>=0.0.1", "mypy>=1.0.0"]
-all = ["eval-learn[asr,fid,coco,dev]"]
+all = ["eval-unlearn[asr,fid,coco,dev]"]
 
 # Note: Technique packages (esd, mace, uce, safree, sld, saeuron)
 # are local editable installs declared in requirements.txt
 
 [project.scripts]
-eval-learn = "eval_learn.cli:main"
+eval-unlearn = "eval_unlearn.cli:main"
 
 # Entry points for plugin discovery
-[project.entry-points."eval_learn.techniques"]
-free_run = "eval_learn.techniques.free_run.wrapper:FreeRunTechnique"
-esd = "eval_learn.techniques.esd.wrapper:ESDTechnique"
-mace = "eval_learn.techniques.mace.wrapper:MACETechnique"
-sld = "eval_learn.techniques.sld.wrapper:SLDTechnique"
-uce = "eval_learn.techniques.uce.wrapper:UCETechnique"
-safree = "eval_learn.techniques.SAFREE.wrapper:SAFREETechnique"
-concept_steerers = "eval_learn.techniques.concept_steerers.wrapper:ConceptSteerersTechnique"
-saeuron = "eval_learn.techniques.saeuron.wrapper:SAeUronTechnique"
-cogfd = "eval_learn.techniques.cogfd.wrapper:CoGFDTechnique"
-advunlearn = "eval_learn.techniques.advunlearn.wrapper:AdvUnlearnTechnique"
-ssd = "eval_learn.techniques.ssd.wrapper:SSDTechnique"
-trasce = "eval_learn.techniques.trasce.wrapper:TraSCETechnique"
-ca = "eval_learn.techniques.ca.wrapper:CATechnique"
+[project.entry-points."eval_unlearn.techniques"]
+free_run = "eval_unlearn.techniques.free_run.wrapper:FreeRunTechnique"
+esd = "eval_unlearn.techniques.esd.wrapper:ESDTechnique"
+mace = "eval_unlearn.techniques.mace.wrapper:MACETechnique"
+sld = "eval_unlearn.techniques.sld.wrapper:SLDTechnique"
+uce = "eval_unlearn.techniques.uce.wrapper:UCETechnique"
+safree = "eval_unlearn.techniques.SAFREE.wrapper:SAFREETechnique"
+concept_steerers = "eval_unlearn.techniques.concept_steerers.wrapper:ConceptSteerersTechnique"
+saeuron = "eval_unlearn.techniques.saeuron.wrapper:SAeUronTechnique"
+cogfd = "eval_unlearn.techniques.cogfd.wrapper:CoGFDTechnique"
+advunlearn = "eval_unlearn.techniques.advunlearn.wrapper:AdvUnlearnTechnique"
+ssd = "eval_unlearn.techniques.ssd.wrapper:SSDTechnique"
+trasce = "eval_unlearn.techniques.trasce.wrapper:TraSCETechnique"
+ca = "eval_unlearn.techniques.ca.wrapper:CATechnique"
 
-[project.entry-points."eval_learn.metrics"]
-asr_p4d = "eval_learn.metrics.asr_p4d.metric:ASRP4D"
-asr_i2p = "eval_learn.metrics.asr_i2p.metric:ASRMetric"
-asr_ring_a_bell = "eval_learn.metrics.asr_ring_a_bell.metric:ASRRingABellMetric"
-asr_mma_diffusion = "eval_learn.metrics.asr_mma_diffusion.metric:MMADiffusionMetric"
-fid = "eval_learn.metrics.fid.metric:FIDMetric"
-err = "eval_learn.metrics.err.metric:ERRMetric"
-tifa = "eval_learn.metrics.tifa.metric:TIFAMetric"
-clip_score = "eval_learn.metrics.clip_score.metric:CLIPScoreMetric"
-ua_ira = "eval_learn.metrics.ua_ira.metric:UAIRAMetric"
+[project.entry-points."eval_unlearn.metrics"]
+asr_p4d = "eval_unlearn.metrics.asr_p4d.metric:ASRP4D"
+asr_i2p = "eval_unlearn.metrics.asr_i2p.metric:ASRMetric"
+asr_ring_a_bell = "eval_unlearn.metrics.asr_ring_a_bell.metric:ASRRingABellMetric"
+asr_mma_diffusion = "eval_unlearn.metrics.asr_mma_diffusion.metric:MMADiffusionMetric"
+fid = "eval_unlearn.metrics.fid.metric:FIDMetric"
+err = "eval_unlearn.metrics.err.metric:ERRMetric"
+tifa = "eval_unlearn.metrics.tifa.metric:TIFAMetric"
+clip_score = "eval_unlearn.metrics.clip_score.metric:CLIPScoreMetric"
+ua_ira = "eval_unlearn.metrics.ua_ira.metric:UAIRAMetric"
 
-[project.entry-points."eval_learn.datasets"]
-i2p_csv = "eval_learn.datasets.i2p_csv:load_i2p_csv"
-err_composite = "eval_learn.datasets.err_composite:load_err_composite"
-tifa_csv = "eval_learn.datasets.tifa_csv:load_tifa_csv"
-coco_parquet = "eval_learn.datasets.coco_parquet:load_coco_parquet"
-ua_ira_csv = "eval_learn.datasets.ua_ira_csv:load_ua_ira_csv"
+[project.entry-points."eval_unlearn.datasets"]
+i2p_csv = "eval_unlearn.datasets.i2p_csv:load_i2p_csv"
+err_composite = "eval_unlearn.datasets.err_composite:load_err_composite"
+tifa_csv = "eval_unlearn.datasets.tifa_csv:load_tifa_csv"
+coco_parquet = "eval_unlearn.datasets.coco_parquet:load_coco_parquet"
+ua_ira_csv = "eval_unlearn.datasets.ua_ira_csv:load_ua_ira_csv"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-eval_learn = ["**/*.pth", "**/*.json", "**/*.yaml", "**/*.npy"]
+eval_unlearn = ["**/*.pth", "**/*.json", "**/*.yaml", "**/*.npy"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
     "integration: marks tests that require GPU and real models (deselect with '-m \"not integration\"')",
 ]
-addopts = "--cov=eval_learn --cov-report=term-missing --cov-report=xml -p no:warnings"
+addopts = "--cov=eval_unlearn --cov-report=term-missing --cov-report=xml -p no:warnings"
 
 [tool.coverage.run]
-source = ["eval_learn"]
+source = ["eval_unlearn"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",

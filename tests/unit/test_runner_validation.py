@@ -2,7 +2,7 @@
 
 import pytest
 
-from eval_learn.runners.validation import (
+from eval_unlearn.runners.validation import (
     ValidationError,
     get_erase_concept,
     validate_nudity_metrics,

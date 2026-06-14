@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from PIL import Image
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -15,11 +15,11 @@ def _make_asr_metric(detector="nudenet", concept="nudity", **kwargs):
     mock_nude = MagicMock()
     mock_q16 = MagicMock()
 
-    with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", mock_nude), \
-         patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier", mock_q16), \
-         patch("eval_learn.metrics.asr_i2p.metric.CLIPModel", MagicMock()), \
-         patch("eval_learn.metrics.asr_i2p.metric.CLIPProcessor", MagicMock()):
-        from eval_learn.metrics.asr_i2p.metric import ASRMetric
+    with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", mock_nude), \
+         patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier", mock_q16), \
+         patch("eval_unlearn.metrics.asr_i2p.metric.CLIPModel", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_i2p.metric.CLIPProcessor", MagicMock()):
+        from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
         metric = ASRMetric(
             concept_name=concept,
             detector=detector,
@@ -33,22 +33,22 @@ def _make_asr_metric(detector="nudenet", concept="nudity", **kwargs):
 # ---------------------------------------------------------------------------
 class TestASRConfig:
     def test_invalid_concept_raises(self):
-        from eval_learn.metrics.asr_i2p.config import ASRConfig
+        from eval_unlearn.metrics.asr_i2p.config import ASRConfig
         with pytest.raises(ValueError, match="Unknown ASR concept"):
             ASRConfig(concept_name="bad_concept")
 
     def test_invalid_detector_raises(self):
-        from eval_learn.metrics.asr_i2p.config import ASRConfig
+        from eval_unlearn.metrics.asr_i2p.config import ASRConfig
         with pytest.raises(ValueError, match="detector must be one of"):
             ASRConfig(concept_name="nudity", detector="bad")
 
     def test_nudenet_on_non_nudity_raises(self):
-        from eval_learn.metrics.asr_i2p.config import ASRConfig
+        from eval_unlearn.metrics.asr_i2p.config import ASRConfig
         with pytest.raises(ValueError, match="only valid for nudity"):
             ASRConfig(concept_name="violence", detector="nudenet")
 
     def test_valid_config(self):
-        from eval_learn.metrics.asr_i2p.config import ASRConfig
+        from eval_unlearn.metrics.asr_i2p.config import ASRConfig
         cfg = ASRConfig(concept_name="nudity", detector="nudenet")
         assert cfg.concept_name == "nudity"
         assert cfg.detector == "nudenet"
@@ -65,8 +65,8 @@ class TestASRLoadDataset:
         metric._unsafe_indices = [0, 1]
 
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader), \
-             patch("eval_learn.metrics.asr_i2p.metric.load_i2p_csv", return_value=mock_loader, create=True):
+        with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.load_i2p_csv", return_value=mock_loader, create=True):
             metric.load_dataset()
 
         assert metric._unsafe_count == 0
@@ -79,7 +79,7 @@ class TestASRLoadDataset:
         mock_loader = MagicMock(spec=DataLoader)
 
         # The import happens inside the method, so patch the source module
-        with patch("eval_learn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader):
             result = metric.load_dataset()
 
         assert result is mock_loader
@@ -90,7 +90,7 @@ class TestASRLoadDataset:
         metric = _make_asr_metric(detector="nudenet", concept="nudity", limit=50)
 
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader) as mock_fn:
+        with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader) as mock_fn:
             metric.load_dataset()
 
         mock_fn.assert_called_once_with(concept="nudity", limit=50)
@@ -172,12 +172,12 @@ class TestASRUpdateNudenet:
 # ---------------------------------------------------------------------------
 class TestASRUpdateQ16:
     def _q16_metric(self, label="non inappropriate"):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [(label, 0.9)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(concept_name="violence", detector="q16")
         return m
 
@@ -212,19 +212,19 @@ class TestASRUpdateQ16:
         assert metric._total == 1
 
     def test_q16_auto_detector_violence(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("non inappropriate", 0.1)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(concept_name="violence", detector="auto")
         assert m._detector == "q16"
 
     def test_q16_auto_detector_nudity(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier", MagicMock()):
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier", MagicMock()):
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(concept_name="nudity", detector="auto")
         assert m._detector == "nudenet"
 
@@ -235,8 +235,8 @@ class TestASRUpdateQ16:
 class TestASRUpdateCLIP:
     def _make_clip_metric(self, sim_value=0.5):
         import torch
-        with patch("eval_learn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
             mock_model = MagicMock()
             mock_model.get_image_features.return_value = torch.ones(1, 4)
             mock_model.get_text_features.return_value = torch.ones(1, 4)
@@ -244,7 +244,7 @@ class TestASRUpdateCLIP:
             mock_model.eval.return_value = mock_model
             mock_model.to.return_value = mock_model
             mock_proc.from_pretrained.return_value = MagicMock()
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             metric = ASRMetric(
                 concept_name="violence", detector="clip",
                 similarity_threshold=sim_value
@@ -332,25 +332,25 @@ class TestASRCompute:
 # ---------------------------------------------------------------------------
 class TestASRI2PCoverageGaps:
     def _make_q16_metric(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("inappropriate", 0.9)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(concept_name="violence", detector="q16")
         return m
 
     def _make_clip_metric(self):
         import torch
-        with patch("eval_learn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
             mock_model = MagicMock()
             mock_cls.from_pretrained.return_value = mock_model
             mock_model.eval.return_value = mock_model
             mock_model.to.return_value = mock_model
             mock_proc.from_pretrained.return_value = MagicMock()
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             metric = ASRMetric(concept_name="violence", detector="clip")
         real_feat = torch.ones(1, 4)
         metric.clip_model = MagicMock()
@@ -394,9 +394,9 @@ class TestASRI2PCoverageGaps:
 
     def test_clip_none_raises_runtime_error(self):
         """Line 103: RuntimeError when CLIPModel is None and detector='clip'."""
-        with patch("eval_learn.metrics.asr_i2p.metric.CLIPModel", None), \
-             patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()):
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+        with patch("eval_unlearn.metrics.asr_i2p.metric.CLIPModel", None), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()):
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             with pytest.raises(RuntimeError, match="transformers"):
                 ASRMetric(concept_name="violence", detector="clip")
 
@@ -407,18 +407,18 @@ class TestASRI2PCoverageGaps:
         metric.nude_detector.detect.return_value = []
         with patch("tempfile.mkstemp", return_value=(0, "/tmp/fake_i2p.png")), \
              patch("os.close"), \
-             patch("eval_learn.metrics.asr_i2p.metric.os.path.exists", return_value=True), \
-             patch("eval_learn.metrics.asr_i2p.metric.os.remove",
+             patch("eval_unlearn.metrics.asr_i2p.metric.os.path.exists", return_value=True), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.os.remove",
                    side_effect=OSError("locked")):
             metric.update([_dummy_image()], ["prompt"])
         assert metric._total == 1
 
     def test_q16_unknown_clip_model_fallback_warning(self):
         """Line 94: warning when clip_model_id not in _HF_TO_Q16."""
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
             mock_q16_cls.return_value = MagicMock()
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             metric = ASRMetric(
                 concept_name="violence",
                 detector="q16",

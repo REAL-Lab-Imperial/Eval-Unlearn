@@ -46,7 +46,7 @@ All techniques are compatible with FID. No concept restrictions.
 
 !!! warning "Requires torchvision"
     FID requires `torchvision` for the Inception V3 model. Install with
-    `pip install eval-learn[fid]`. Running without it raises an `ImportError`.
+    `pip install eval-unlearn[fid]`. Running without it raises an `ImportError`.
 
 !!! warning "Sample count affects reliability"
     FID requires sufficient samples for a reliable Gaussian fit. With `limit=50` or

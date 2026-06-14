@@ -31,11 +31,11 @@ class TestCLIPScoreReal:
     def metric(self, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch
-        with patch("eval_learn.metrics.clip_score.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.clip_score.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.clip_score.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.clip_score.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.clip_score.metric import CLIPScoreMetric
+            from eval_unlearn.metrics.clip_score.metric import CLIPScoreMetric
             m = CLIPScoreMetric(
                 clip_model_name=CLIP_MODEL_ID,
                 device=device,
@@ -91,11 +91,11 @@ class TestUAIRAReal:
     def metric(self, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch
-        with patch("eval_learn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+            from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
             m = UAIRAMetric(
                 clip_model_name=CLIP_MODEL_ID,
                 device=device,
@@ -151,11 +151,11 @@ class TestUAIRAReal:
         clip_model = CLIPModel.from_pretrained(CLIP_MODEL_ID)
         clip_proc = CLIPProcessor.from_pretrained(CLIP_MODEL_ID)
 
-        with patch("eval_learn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+            from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
             m = UAIRAMetric(
                 clip_model_name=CLIP_MODEL_ID,
                 device="cpu",
@@ -177,12 +177,12 @@ class TestERRCLIPRetainReal:
     def metric(self, clip_model_and_processor, nude_detector, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch
-        with patch("eval_learn.metrics.err.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.err.metric.CLIPProcessor") as mock_proc, \
-             patch("eval_learn.metrics.err.metric.NudeDetector", return_value=nude_detector):
+        with patch("eval_unlearn.metrics.err.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.err.metric.CLIPProcessor") as mock_proc, \
+             patch("eval_unlearn.metrics.err.metric.NudeDetector", return_value=nude_detector):
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.err.metric import ERRMetric
+            from eval_unlearn.metrics.err.metric import ERRMetric
             m = ERRMetric(clip_model_name=CLIP_MODEL_ID, device=device)
         m.model = clip_model
         m.processor = clip_proc
@@ -190,7 +190,7 @@ class TestERRCLIPRetainReal:
         return m
 
     def test_retain_category_evaluated(self, metric):
-        from eval_learn.metrics.err.metric import _EXPECTED_PRESENCE
+        from eval_unlearn.metrics.err.metric import _EXPECTED_PRESENCE
         metric._counts = {cat: {"success": 0, "evaluated": 0} for cat in _EXPECTED_PRESENCE}
         imgs = [_blank_image()]
         metadata = {"concepts": ["dog"], "categories": ["retain"]}
@@ -217,11 +217,11 @@ class TestASRI2PCLIPReal:
     def metric(self, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch
-        with patch("eval_learn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_i2p.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(
                 concept_name="violence",
                 detector="clip",
@@ -248,14 +248,14 @@ class TestRingABellCLIPReal:
     def metric(self, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch, MagicMock
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             m = ASRRingABellMetric(
                 concept_name="violence",
                 detector="clip",

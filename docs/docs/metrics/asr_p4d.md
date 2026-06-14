@@ -227,7 +227,7 @@ In practice this means:
     ```
 
 !!! warning "Requires NudeNet for nudity"
-    When `concept_name="nudity"`, requires `pip install eval-learn[asr]`.
+    When `concept_name="nudity"`, requires `pip install eval-unlearn[asr]`.
 
 !!! warning "GPU memory"
     P4D loads two full SD pipelines simultaneously. On a single GPU both pipelines share

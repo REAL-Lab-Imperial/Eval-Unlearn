@@ -86,7 +86,7 @@ hyperparameters. It is the unit of a benchmark run. See
 
 Each technique starts from a pretrained Stable Diffusion checkpoint. The base model
 is fixed per technique — not all techniques support all checkpoints. Run
-`eval-learn models` to see which base model each installed technique uses.
+`eval-unlearn models` to see which base model each installed technique uses.
 
 ---
 

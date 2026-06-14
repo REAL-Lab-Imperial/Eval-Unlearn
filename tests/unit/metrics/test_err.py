@@ -5,17 +5,17 @@ import pytest
 import torch
 from PIL import Image
 
-from eval_learn.metrics.err.metric import ERRMetric
-from eval_learn.metrics.err.config import ERRConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.err.metric import ERRMetric
+from eval_unlearn.metrics.err.config import ERRConfig
+from eval_unlearn.types import MetricResult
 
 
 def _make_err_metric(**kwargs):
     """Instantiate ERRMetric with mocked CLIP model/processor and NudeDetector."""
-    with patch("eval_learn.metrics.err.metric.CLIPModel") as mock_model_cls, \
-         patch("eval_learn.metrics.err.metric.CLIPProcessor") as mock_proc_cls, \
-         patch("eval_learn.metrics.err.metric.torch") as mock_torch, \
-         patch("eval_learn.metrics.err.metric.NudeDetector") as mock_nude_cls:
+    with patch("eval_unlearn.metrics.err.metric.CLIPModel") as mock_model_cls, \
+         patch("eval_unlearn.metrics.err.metric.CLIPProcessor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.err.metric.torch") as mock_torch, \
+         patch("eval_unlearn.metrics.err.metric.NudeDetector") as mock_nude_cls:
         mock_torch.cuda.is_available.return_value = False
         mock_model = Mock()
         mock_model_cls.from_pretrained.return_value = mock_model
@@ -168,7 +168,7 @@ class TestERRMetricComputation:
         assert result.value == 0.0
         assert "error" in result.details
 
-    @patch("eval_learn.metrics.err.metric.hmean", return_value=1.0)
+    @patch("eval_unlearn.metrics.err.metric.hmean", return_value=1.0)
     def test_compute_all_categories_perfect(self, mock_hmean):
         metric = _make_err_metric(device="cpu")
         for cat in metric._counts:
@@ -204,7 +204,7 @@ class TestERRMetricComputation:
         assert result.details["adversarial"] is None
         assert result.details["valid_categories"] == 2
 
-    @patch("eval_learn.metrics.err.metric.hmean", return_value=0.75)
+    @patch("eval_unlearn.metrics.err.metric.hmean", return_value=0.75)
     def test_compute_returns_metric_result(self, mock_hmean):
         metric = _make_err_metric(device="cpu")
         for cat in metric._counts:
@@ -215,7 +215,7 @@ class TestERRMetricComputation:
         assert "config" in result.details
         assert "counts" in result.details
 
-    @patch("eval_learn.metrics.err.metric.hmean", return_value=1.0)
+    @patch("eval_unlearn.metrics.err.metric.hmean", return_value=1.0)
     def test_compute_includes_config(self, mock_hmean):
         metric = _make_err_metric(device="cpu", target_limit=50)
         for cat in metric._counts:
@@ -253,9 +253,9 @@ class TestERRMetricIntegration:
 # ---------------------------------------------------------------------------
 class TestERRCoverageGaps:
     def test_init_raises_when_nudenet_none(self):
-        with patch("eval_learn.metrics.err.metric.NudeDetector", None), \
-             patch("eval_learn.metrics.err.metric.CLIPModel") as mc, \
-             patch("eval_learn.metrics.err.metric.CLIPProcessor") as mp:
+        with patch("eval_unlearn.metrics.err.metric.NudeDetector", None), \
+             patch("eval_unlearn.metrics.err.metric.CLIPModel") as mc, \
+             patch("eval_unlearn.metrics.err.metric.CLIPProcessor") as mp:
             m = MagicMock(); m.to.return_value = m
             mc.from_pretrained.return_value = m
             mp.from_pretrained.return_value = MagicMock()
@@ -316,7 +316,7 @@ class TestERRCoverageGaps:
     def test_load_dataset_resets_counts_and_delegates(self):
         metric = _make_err_metric()
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.err_composite.load_err_composite", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.err_composite.load_err_composite", return_value=mock_loader):
             result = metric.load_dataset()
         assert result is mock_loader
         assert all(v["evaluated"] == 0 for v in metric._counts.values())

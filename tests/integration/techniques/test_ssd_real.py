@@ -32,7 +32,7 @@ def ssd_technique():
         original_init(self, _CACHED_MODEL, **kwargs)
 
     with patch.object(_RealSSDPipeline, "__init__", _patched_init):
-        from eval_learn.techniques.ssd.wrapper import SSDTechnique
+        from eval_unlearn.techniques.ssd.wrapper import SSDTechnique
         tech = SSDTechnique(
             erase_concept="nudity",
             device="cuda",

@@ -69,7 +69,7 @@ The single runner is selected automatically when your config contains a `metric`
 ## Python API
 
 ```python
-from eval_learn.runners import SingleBenchmarkRunner
+from eval_unlearn.runners import SingleBenchmarkRunner
 
 runner = SingleBenchmarkRunner(
     technique_name="esd",

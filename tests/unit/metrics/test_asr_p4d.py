@@ -5,7 +5,7 @@ import tempfile
 from unittest.mock import MagicMock, patch
 from PIL import Image
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -21,12 +21,12 @@ def _make_p4d_metric(detector="nudenet", concept="nudity", **kwargs):
     with patch.dict("sys.modules", {
         "p4d": MagicMock(P4DGenerator=mock_p4d),
     }), \
-    patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", mock_p4d), \
-    patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", mock_nude), \
-    patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", mock_q16), \
-    patch("eval_learn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
-    patch("eval_learn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
-        from eval_learn.metrics.asr_p4d.metric import ASRP4D
+    patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", mock_p4d), \
+    patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", mock_nude), \
+    patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", mock_q16), \
+    patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
+    patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
+        from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
         metric = ASRP4D(
             concept_name=concept,
             detector=detector,
@@ -41,69 +41,69 @@ def _make_p4d_metric(detector="nudenet", concept="nudity", **kwargs):
 # ---------------------------------------------------------------------------
 class TestASRP4DConfig:
     def test_defaults(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         cfg = ASRP4DConfig.from_dict({"concept_name": "nudity"})
         assert cfg.concept_name == "nudity"
         assert cfg.detector == "auto"
         assert cfg.erase_id == "std"
 
     def test_invalid_detector(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="detector must be one of"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "detector": "bad"})
 
     def test_nudenet_on_non_nudity(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="only valid for nudity"):
             ASRP4DConfig.from_dict({"concept_name": "violence", "detector": "nudenet"})
 
     def test_invalid_variant(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="variant must be one of"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "variant": "bad"})
 
     def test_invalid_erase_id(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="erase_id must be one of"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "erase_id": "bad"})
 
     def test_invalid_q16_threshold(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="q16_threshold"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "q16_threshold": 2.0})
 
     def test_empty_concept_name_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="concept_name must not be empty"):
             ASRP4DConfig.from_dict({"concept_name": ""})
 
     def test_sld_without_safe_level_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="safe_level must be set"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "erase_id": "sld"})
 
     def test_invalid_safe_level_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="safe_level must be one of"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "erase_id": "sld", "safe_level": "ULTRA"})
 
     def test_eval_step_exceeds_num_iter_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="eval_step"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "eval_step": 50, "num_iter": 10})
 
     def test_unsafe_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="unsafe_threshold"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "unsafe_threshold": 1.5})
 
     def test_similarity_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="similarity_threshold"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "similarity_threshold": -0.1})
 
     def test_clip_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_p4d.config import ASRP4DConfig
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="clip_threshold"):
             ASRP4DConfig.from_dict({"concept_name": "nudity", "clip_threshold": 2.0})
 
@@ -227,13 +227,13 @@ class TestASRP4DUpdateNudenet:
 # ---------------------------------------------------------------------------
 class TestASRP4DUpdateQ16:
     def _q16_metric(self, label="non inappropriate"):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [(label, 0.9)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             m = ASRP4D(concept_name="violence", detector="q16", erase_id="std")
         return m
 
@@ -287,28 +287,28 @@ class TestASRP4DCompute:
 # ---------------------------------------------------------------------------
 class TestASRP4DCoverageGaps:
     def _make_q16_metric(self):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("inappropriate", 0.9)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             m = ASRP4D(concept_name="violence", detector="q16", erase_id="std")
         return m
 
     def _make_clip_metric(self):
         import torch
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor") as mock_proc:
             mock_model = MagicMock()
             mock_cls.from_pretrained.return_value = mock_model
             mock_model.eval.return_value = mock_model
             mock_model.to.return_value = mock_model
             mock_proc.from_pretrained.return_value = MagicMock()
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             m = ASRP4D(concept_name="violence", detector="clip", erase_id="std")
         real_feat = torch.ones(1, 4)
         m.clip_model = MagicMock()
@@ -321,11 +321,11 @@ class TestASRP4DCoverageGaps:
 
     def test_q16_fallback_warning_for_unknown_clip_model(self):
         """Line 115: warning when clip_model_id not in _HF_TO_Q16."""
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier") as mock_q16_cls:
             mock_q16_cls.return_value = MagicMock()
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             metric = ASRP4D(
                 concept_name="violence",
                 detector="q16",
@@ -337,7 +337,7 @@ class TestASRP4DCoverageGaps:
     def test_target_prompts_path_with_limit_covers_lines_155_217(self, tmp_path):
         """Lines 155 (df.head limit) and 217 (collate_fn Dataset return)."""
         import pandas as pd
-        from eval_learn.types import Dataset as _Dataset
+        from eval_unlearn.types import Dataset as _Dataset
 
         csv_path = str(tmp_path / "prompts.csv")
         pd.DataFrame({"prompt": [f"p{i}" for i in range(5)]}).to_csv(csv_path, index=False)
@@ -355,7 +355,7 @@ class TestASRP4DCoverageGaps:
         mock_gen = MagicMock()
         mock_gen.generate.return_value = mock_rows
 
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", return_value=mock_gen):
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", return_value=mock_gen):
             loader = metric.load_dataset()
 
         batches = list(loader)
@@ -402,8 +402,8 @@ class TestASRP4DCoverageGaps:
         metric.nude_detector.detect.return_value = []
         with patch("tempfile.mkstemp", return_value=(0, "/tmp/fake_p4d.png")), \
              patch("os.close"), \
-             patch("eval_learn.metrics.asr_p4d.metric.os.path.exists", return_value=True), \
-             patch("eval_learn.metrics.asr_p4d.metric.os.remove",
+             patch("eval_unlearn.metrics.asr_p4d.metric.os.path.exists", return_value=True), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.os.remove",
                    side_effect=OSError("locked")):
             metric.update([_dummy_image()], ["prompt"])
         assert metric._total == 1

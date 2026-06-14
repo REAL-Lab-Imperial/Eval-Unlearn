@@ -124,7 +124,7 @@ If you encounter a CUDA OOM:
 
 **Run techniques sequentially, not concurrently:**
 
-- Never launch two eval-learn processes on the same GPU — each will try to load a
+- Never launch two eval-unlearn processes on the same GPU — each will try to load a
   full SD pipeline
 
 ---

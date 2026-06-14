@@ -11,8 +11,8 @@ class TestRegistryLocal:
         """Import a fresh copy of registry.local with empty registries."""
         import importlib
         import sys
-        sys.modules.pop("eval_learn.registry.local", None)
-        import eval_learn.registry.local as reg
+        sys.modules.pop("eval_unlearn.registry.local", None)
+        import eval_unlearn.registry.local as reg
         reg._TECHNIQUES.clear()
         reg._METRICS.clear()
         reg._DATASETS.clear()
@@ -114,42 +114,42 @@ class TestRegistryLocal:
 # ---------------------------------------------------------------------------
 class TestClipConstants:
     def test_validate_clip_model_valid(self):
-        from eval_learn.metrics._clip_constants import validate_clip_model
+        from eval_unlearn.metrics._clip_constants import validate_clip_model
         validate_clip_model("openai/clip-vit-large-patch14")
         validate_clip_model("openai/clip-vit-base-patch16")
         validate_clip_model("openai/clip-vit-large-patch14-336")
 
     def test_validate_clip_model_invalid(self):
-        from eval_learn.metrics._clip_constants import validate_clip_model
+        from eval_unlearn.metrics._clip_constants import validate_clip_model
         with pytest.raises(ValueError, match="Unsupported CLIP model"):
             validate_clip_model("some/unknown-model", "test_field")
 
     def test_validate_sd_text_encoder_valid(self):
-        from eval_learn.metrics._clip_constants import validate_sd_text_encoder
+        from eval_unlearn.metrics._clip_constants import validate_sd_text_encoder
         validate_sd_text_encoder("openai/clip-vit-large-patch14")
 
     def test_validate_sd_text_encoder_invalid(self):
-        from eval_learn.metrics._clip_constants import validate_sd_text_encoder
+        from eval_unlearn.metrics._clip_constants import validate_sd_text_encoder
         with pytest.raises(ValueError, match="Unsupported SD text encoder"):
             validate_sd_text_encoder("openai/clip-vit-base-patch16")
 
     def test_clip_encoder_for_sd_known_model(self):
-        from eval_learn.metrics._clip_constants import clip_encoder_for_sd
+        from eval_unlearn.metrics._clip_constants import clip_encoder_for_sd
         enc = clip_encoder_for_sd("CompVis/stable-diffusion-v1-4")
         assert enc == "openai/clip-vit-large-patch14"
 
     def test_clip_encoder_for_sd_runwayml(self):
-        from eval_learn.metrics._clip_constants import clip_encoder_for_sd
+        from eval_unlearn.metrics._clip_constants import clip_encoder_for_sd
         enc = clip_encoder_for_sd("runwayml/stable-diffusion-v1-5")
         assert enc == "openai/clip-vit-large-patch14"
 
     def test_clip_encoder_for_sd_safe(self):
-        from eval_learn.metrics._clip_constants import clip_encoder_for_sd
+        from eval_unlearn.metrics._clip_constants import clip_encoder_for_sd
         enc = clip_encoder_for_sd("AIML-TUDA/stable-diffusion-safe")
         assert enc == "openai/clip-vit-large-patch14"
 
     def test_clip_encoder_for_sd_unknown_raises(self):
-        from eval_learn.metrics._clip_constants import clip_encoder_for_sd
+        from eval_unlearn.metrics._clip_constants import clip_encoder_for_sd
         with pytest.raises(ValueError, match="Unknown SD model"):
             clip_encoder_for_sd("some/unknown-diffusion-model")
 
@@ -162,17 +162,17 @@ class TestMetricsInit:
         """metrics/__init__.py should not raise even if GPU packages are absent."""
         import sys
         for key in list(sys.modules.keys()):
-            if "eval_learn.metrics" in key and key != "eval_learn.metrics":
+            if "eval_unlearn.metrics" in key and key != "eval_unlearn.metrics":
                 del sys.modules[key]
-        sys.modules.pop("eval_learn.metrics", None)
+        sys.modules.pop("eval_unlearn.metrics", None)
 
         broken = MagicMock(side_effect=ImportError("not installed"))
         with patch.dict("sys.modules", {"nudenet": broken, "q16": broken}):
-            import eval_learn.metrics  # noqa: F401
+            import eval_unlearn.metrics  # noqa: F401
         assert True
 
     def test_all_exports_in_globals(self):
-        import eval_learn.metrics as m
+        import eval_unlearn.metrics as m
         # At least the classes that don't need GPU should be importable
         assert hasattr(m, "__all__")
         for name in m.__all__:
@@ -184,7 +184,7 @@ class TestMetricsInit:
 # ---------------------------------------------------------------------------
 class TestTechniquesInitAll:
     def test_all_contains_only_available_techniques(self):
-        import eval_learn.techniques as t
+        import eval_unlearn.techniques as t
         # __all__ must only contain names that are actually in globals
         for name in t.__all__:
             assert name in dir(t), f"{name} in __all__ but not in module globals"

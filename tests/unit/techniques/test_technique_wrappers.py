@@ -27,7 +27,7 @@ class TestESDWrapper:
     def test_generate_delegates_to_pipeline(self):
         mock_pipe = _mock_pipeline([_dummy_image(), _dummy_image()])
         with patch.dict("sys.modules", {"esd": MagicMock(ESDPipeline=MagicMock(return_value=mock_pipe))}):
-            from eval_learn.techniques.esd.wrapper import ESDTechnique
+            from eval_unlearn.techniques.esd.wrapper import ESDTechnique
             t = ESDTechnique(erase_concept="nudity", device="cpu")
             result = t.generate(["a cat", "a dog"], seed=42)
         assert len(result) == 2
@@ -35,7 +35,7 @@ class TestESDWrapper:
     def test_generate_passes_seed(self):
         mock_pipe = _mock_pipeline()
         with patch.dict("sys.modules", {"esd": MagicMock(ESDPipeline=MagicMock(return_value=mock_pipe))}):
-            from eval_learn.techniques.esd.wrapper import ESDTechnique
+            from eval_unlearn.techniques.esd.wrapper import ESDTechnique
             t = ESDTechnique(erase_concept="nudity", device="cpu")
             t.generate(["prompt"], seed=7)
         mock_pipe.generate.assert_called_once()
@@ -45,9 +45,9 @@ class TestESDWrapper:
     def test_import_error_raises(self):
         with patch.dict("sys.modules", {"esd": None}):
             import importlib, sys
-            sys.modules.pop("eval_learn.techniques.esd.wrapper", None)
+            sys.modules.pop("eval_unlearn.techniques.esd.wrapper", None)
             with pytest.raises((ImportError, Exception)):
-                import eval_learn.techniques.esd.wrapper  # noqa: F401
+                import eval_unlearn.techniques.esd.wrapper  # noqa: F401
 
 
 # ---------------------------------------------------------------------------
@@ -76,7 +76,7 @@ def _test_wrapper_generate(module_path, class_name, pkg_name, pkg_class, init_kw
 class TestSSDWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.ssd.wrapper", "SSDTechnique",
+            "eval_unlearn.techniques.ssd.wrapper", "SSDTechnique",
             "ssd", "SSDPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -85,7 +85,7 @@ class TestSSDWrapper:
 class TestCAWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.ca.wrapper", "CATechnique",
+            "eval_unlearn.techniques.ca.wrapper", "CATechnique",
             "ca", "CAPipeline",
             {"erase_concept": "nudity", "anchor_concept": "clothed person", "device": "cpu"},
         )
@@ -94,7 +94,7 @@ class TestCAWrapper:
 class TestCoGFDWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.cogfd.wrapper", "CoGFDTechnique",
+            "eval_unlearn.techniques.cogfd.wrapper", "CoGFDTechnique",
             "cogfd", "CoGFDPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -103,7 +103,7 @@ class TestCoGFDWrapper:
 class TestTraSCEWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.trasce.wrapper", "TraSCETechnique",
+            "eval_unlearn.techniques.trasce.wrapper", "TraSCETechnique",
             "trasce", "TraSCEPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -112,7 +112,7 @@ class TestTraSCEWrapper:
 class TestMACEWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.mace.wrapper", "MACETechnique",
+            "eval_unlearn.techniques.mace.wrapper", "MACETechnique",
             "mace", "MACEPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -121,7 +121,7 @@ class TestMACEWrapper:
 class TestAdvUnlearnWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.advunlearn.wrapper", "AdvUnlearnTechnique",
+            "eval_unlearn.techniques.advunlearn.wrapper", "AdvUnlearnTechnique",
             "advunlearn", "AdvUnlearnPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -130,7 +130,7 @@ class TestAdvUnlearnWrapper:
 class TestSAeUronWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.saeuron.wrapper", "SAeUronTechnique",
+            "eval_unlearn.techniques.saeuron.wrapper", "SAeUronTechnique",
             "saeuron", "SAeUronPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -139,7 +139,7 @@ class TestSAeUronWrapper:
 class TestSAFREEWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.SAFREE.wrapper", "SAFREETechnique",
+            "eval_unlearn.techniques.SAFREE.wrapper", "SAFREETechnique",
             "safree", "SAFREEPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -148,7 +148,7 @@ class TestSAFREEWrapper:
 class TestConceptSteerersWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.concept_steerers.wrapper", "ConceptSteerersTechnique",
+            "eval_unlearn.techniques.concept_steerers.wrapper", "ConceptSteerersTechnique",
             "concept_steerers", "ConceptSteeringPipeline",
             {"erase_concept": "nudity", "device": "cpu"},
         )
@@ -163,10 +163,10 @@ class TestSLDWrapper:
         mock_result.images = [_dummy_image()]
         mock_pipe = MagicMock(return_value=mock_result)
 
-        with patch("eval_learn.techniques.sld.wrapper.StableDiffusionPipelineSafe") as mock_cls:
+        with patch("eval_unlearn.techniques.sld.wrapper.StableDiffusionPipelineSafe") as mock_cls:
             mock_cls.from_pretrained.return_value = mock_pipe
             mock_pipe.to.return_value = mock_pipe
-            from eval_learn.techniques.sld import wrapper as sld_mod
+            from eval_unlearn.techniques.sld import wrapper as sld_mod
             import importlib
             importlib.reload(sld_mod)
             t = sld_mod.SLDTechnique(erase_concept="nudity", device="cpu")
@@ -180,7 +180,7 @@ class TestSLDWrapper:
 class TestUCEWrapper:
     def test_generate(self):
         _test_wrapper_generate(
-            "eval_learn.techniques.uce.wrapper", "UCETechnique",
+            "eval_unlearn.techniques.uce.wrapper", "UCETechnique",
             "uce", "UCEPipeline",
             {"preset": "nudity", "device": "cpu"},
         )
@@ -192,8 +192,8 @@ class TestUCEWrapper:
 class TestFreeRunWrapper:
     def test_wrapper_ref_none_raises_attribute_error(self):
         import pytest
-        import eval_learn.techniques.free_run as fr_pkg
-        from eval_learn.techniques.free_run import _FreeRunPackage
+        import eval_unlearn.techniques.free_run as fr_pkg
+        from eval_unlearn.techniques.free_run import _FreeRunPackage
         original = _FreeRunPackage._wrapper_ref
         try:
             _FreeRunPackage._wrapper_ref = None
@@ -207,12 +207,12 @@ class TestFreeRunWrapper:
         mock_result.images = [_dummy_image()]
         mock_pipe = MagicMock(return_value=mock_result)
 
-        with patch("eval_learn.techniques.free_run.wrapper.DiffusionPipeline") as mock_cls:
+        with patch("eval_unlearn.techniques.free_run.wrapper.DiffusionPipeline") as mock_cls:
             mock_cls.from_pretrained.return_value = mock_pipe
             mock_pipe.to.return_value = mock_pipe
             import importlib, sys
-            sys.modules.pop("eval_learn.techniques.free_run.wrapper", None)
-            from eval_learn.techniques.free_run import wrapper as fr_mod
+            sys.modules.pop("eval_unlearn.techniques.free_run.wrapper", None)
+            from eval_unlearn.techniques.free_run import wrapper as fr_mod
             importlib.reload(fr_mod)
             t = fr_mod.FreeRunTechnique(model_id="some/model", device="cpu")
             result = t.generate(["prompt"], seed=0)
@@ -228,32 +228,32 @@ class TestTechniquesInit:
         import sys
         # Remove cached modules so the try/except blocks in __init__.py are re-executed
         for key in list(sys.modules.keys()):
-            if "eval_learn.techniques" in key and key != "eval_learn.techniques":
+            if "eval_unlearn.techniques" in key and key != "eval_unlearn.techniques":
                 del sys.modules[key]
-        sys.modules.pop("eval_learn.techniques", None)
+        sys.modules.pop("eval_unlearn.techniques", None)
 
         broken = MagicMock(side_effect=ImportError("not installed"))
         with patch.dict("sys.modules", {"esd": broken, "ssd": broken, "ca": broken}):
-            import eval_learn.techniques  # should not raise
+            import eval_unlearn.techniques  # should not raise
         assert True
 
     def test_safree_import_failure_warns_not_raises(self):
         """Cover the SAFREE try/except warning branch (lines 21-23)."""
         import sys
         for key in list(sys.modules.keys()):
-            if "eval_learn.techniques" in key:
+            if "eval_unlearn.techniques" in key:
                 sys.modules.pop(key, None)
         broken = MagicMock(side_effect=ImportError("safree not found"))
         with patch.dict("sys.modules", {"safree": broken}):
-            import eval_learn.techniques  # must not raise
+            import eval_unlearn.techniques  # must not raise
         assert True
 
     def test_techniques_init_safree_wrapper_failure_warns(self):
         """Cover techniques/__init__.py lines 21-23 via wrapper import failure."""
         import sys
         for key in list(sys.modules.keys()):
-            if "eval_learn.techniques" in key:
+            if "eval_unlearn.techniques" in key:
                 sys.modules.pop(key, None)
-        with patch.dict("sys.modules", {"eval_learn.techniques.SAFREE.wrapper": None}):
-            import eval_learn.techniques  # noqa: F401 — must not raise
+        with patch.dict("sys.modules", {"eval_unlearn.techniques.SAFREE.wrapper": None}):
+            import eval_unlearn.techniques  # noqa: F401 — must not raise
         assert True

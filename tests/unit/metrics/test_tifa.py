@@ -6,9 +6,9 @@ import pytest
 import torch
 from PIL import Image
 
-from eval_learn.metrics.tifa.metric import TIFAMetric
-from eval_learn.metrics.tifa.config import TIFAConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.tifa.metric import TIFAMetric
+from eval_unlearn.metrics.tifa.config import TIFAConfig
+from eval_unlearn.types import MetricResult
 
 
 class TestTIFAConfig:
@@ -43,9 +43,9 @@ class TestTIFAConfig:
 
 def _make_tifa_metric(**kwargs):
     """Helper: create TIFAMetric with mocked BLIP-2 model/processor."""
-    with patch("eval_learn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
-         patch("eval_learn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls, \
-         patch("eval_learn.metrics.tifa.metric.torch") as mock_torch:
+    with patch("eval_unlearn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls, \
+         patch("eval_unlearn.metrics.tifa.metric.torch") as mock_torch:
         mock_torch.cuda.is_available.return_value = False
         mock_torch.float16 = torch.float16
         mock_torch.no_grad = MagicMock(

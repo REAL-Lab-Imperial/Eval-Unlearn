@@ -1,7 +1,7 @@
 # Demos & Tutorials
 
 The notebooks in this section walk you through the two most common ways to use
-eval-learn: evaluating a built-in technique against the standard benchmark suite,
+eval-unlearn: evaluating a built-in technique against the standard benchmark suite,
 and evaluating your own custom model checkpoint.
 
 ---
@@ -12,7 +12,7 @@ and evaluating your own custom model checkpoint.
 `demos/notebooks/tutorial_01_evaluating_an_unlearning_technique.ipynb`
 
 This is the recommended starting point. It covers the full evaluation workflow
-using one of the 13 techniques that ship with eval-learn.
+using one of the 13 techniques that ship with eval-unlearn.
 
 ### What you will learn
 
@@ -35,7 +35,7 @@ If you prefer the command line over a notebook, the same experiment can be run
 with a single command:
 
 ```bash
-eval-learn run --config examples/nudity/esd.json
+eval-unlearn run --config examples/nudity/esd.json
 ```
 
 See [Getting Started](getting-started.md) for the full CLI reference.
@@ -48,14 +48,14 @@ See [Getting Started](getting-started.md) for the full CLI reference.
 `demos/notebooks/tutorial_02_custom_model_evaluation.ipynb`
 
 Use this tutorial when your technique produces a custom model checkpoint that
-is not one of the built-in eval-learn techniques — for example, a fine-tuned
+is not one of the built-in eval-unlearn techniques — for example, a fine-tuned
 Stable Diffusion checkpoint saved as a `.safetensors` or `.pt` file, or any
 HuggingFace-compatible text-to-image pipeline.
 
 ### What you will learn
 
 - How to load any HuggingFace-compatible checkpoint via the `free_run` technique
-- How to point eval-learn at a local model path or a custom HF repository
+- How to point eval-unlearn at a local model path or a custom HF repository
 - How to run the full benchmark suite against your model
 - How to compare your model's scores against baseline results
 

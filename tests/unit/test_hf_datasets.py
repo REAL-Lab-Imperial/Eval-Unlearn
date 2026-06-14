@@ -138,7 +138,7 @@ class TestHFDatasets:
     def test_tifa_text_loads(self):
         """Verify TIFA text file loads with correct schema."""
         from datasets import load_dataset, DatasetDict
-        from eval_learn.datasets.hf_stream import load_hf_config
+        from eval_unlearn.datasets.hf_stream import load_hf_config
 
         token = os.getenv("HF_TOKEN")
         cfg = load_hf_config("tifa")
@@ -158,7 +158,7 @@ class TestHFDatasets:
     def test_tifa_qa_loads(self):
         """Verify TIFA QA file loads with correct schema."""
         from datasets import load_dataset, DatasetDict
-        from eval_learn.datasets.hf_stream import load_hf_config
+        from eval_unlearn.datasets.hf_stream import load_hf_config
 
         token = os.getenv("HF_TOKEN")
         cfg = load_hf_config("tifa")

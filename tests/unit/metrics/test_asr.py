@@ -4,9 +4,9 @@ from unittest.mock import Mock, patch
 import pytest
 from PIL import Image
 
-from eval_learn.metrics.asr_i2p.metric import ASRMetric
-from eval_learn.metrics.asr_i2p.config import ASRConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
+from eval_unlearn.metrics.asr_i2p.config import ASRConfig
+from eval_unlearn.types import MetricResult
 
 
 # ---------------------------------------------------------------------------
@@ -74,43 +74,43 @@ class TestASRConfig:
 class TestASRMetricInit:
 
     def test_auto_detector_nudity_uses_nudenet(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
             mock_cls.return_value = Mock()
             metric = ASRMetric(concept_name="nudity", detector="auto")
         assert metric._detector == "nudenet"
         assert metric.nude_detector is not None
 
     def test_auto_detector_violence_uses_q16(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
             mock_cls.return_value = Mock()
             metric = ASRMetric(concept_name="violence", detector="auto")
         assert metric._detector == "q16"
         assert metric.q16_classifier is not None
 
     def test_explicit_q16_detector(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
             mock_cls.return_value = Mock()
             metric = ASRMetric(concept_name="nudity", detector="q16")
         assert metric._detector == "q16"
 
     def test_explicit_nudenet_detector_nudity(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
             mock_cls.return_value = Mock()
             metric = ASRMetric(concept_name="nudity", detector="nudenet")
         assert metric._detector == "nudenet"
 
     def test_missing_nudenet_raises(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector", None):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", None):
             with pytest.raises(RuntimeError, match="requires 'nudenet'"):
                 ASRMetric(concept_name="nudity", detector="nudenet")
 
     def test_missing_q16_raises(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier", None):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier", None):
             with pytest.raises(RuntimeError, match="requires the 'q16' package"):
                 ASRMetric(concept_name="violence", detector="q16")
 
     def test_initial_counters_zero(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier"):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier"):
             metric = ASRMetric(concept_name="violence", detector="q16")
         assert metric._unsafe_count == 0
         assert metric._total == 0
@@ -125,7 +125,7 @@ class TestUpdateNudenet:
 
     @pytest.fixture
     def metric(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector") as mock_cls:
             mock_detector = Mock()
             mock_cls.return_value = mock_detector
             m = ASRMetric(concept_name="nudity", detector="nudenet")
@@ -224,7 +224,7 @@ class TestUpdateQ16:
 
     @pytest.fixture
     def metric(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
             mock_q16 = Mock()
             mock_cls.return_value = mock_q16
             m = ASRMetric(concept_name="violence", detector="q16")
@@ -280,7 +280,7 @@ class TestCompute:
 
     @pytest.fixture
     def metric(self):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier"):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier"):
             return ASRMetric(concept_name="violence", detector="q16")
 
     def test_no_images_returns_zero_with_error(self, metric):

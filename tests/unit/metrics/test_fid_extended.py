@@ -5,7 +5,7 @@ from PIL import Image
 import numpy as np
 import torch
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -14,11 +14,11 @@ def _dummy_image(color=(50, 100, 150)):
 
 def _make_fid_metric(**kwargs):
     """Build FIDMetric with mocked inception model."""
-    with patch("eval_learn.metrics.fid.metric._load_inception") as mock_load:
+    with patch("eval_unlearn.metrics.fid.metric._load_inception") as mock_load:
         mock_model = MagicMock()
         mock_model.return_value = torch.ones(1, 2048)
         mock_load.return_value = mock_model
-        from eval_learn.metrics.fid.metric import FIDMetric
+        from eval_unlearn.metrics.fid.metric import FIDMetric
         metric = FIDMetric(device="cpu", **kwargs)
     return metric
 
@@ -43,7 +43,7 @@ class TestFIDLoadDataset:
         inception_fn = inception_side_effect or (lambda b: torch.ones(b.shape[0], 2048))
         mock_model = MagicMock()
         mock_model.side_effect = inception_fn
-        with patch("eval_learn.datasets.coco_parquet.load_coco_parquet", return_value=mock_batches), \
+        with patch("eval_unlearn.datasets.coco_parquet.load_coco_parquet", return_value=mock_batches), \
              patch.object(metric, "_get_model", return_value=mock_model):
             return metric.load_dataset()
 
@@ -94,7 +94,7 @@ class TestFIDLoadDataset:
 
         batches = list(loader)
         assert len(batches) >= 1
-        from eval_learn.types import Dataset
+        from eval_unlearn.types import Dataset
         assert isinstance(batches[0], Dataset)
         assert "a cat" in batches[0].prompts
 
@@ -151,25 +151,25 @@ class TestFIDCalculateEdgeCases:
         assert metric._get_model() is metric._inception_model
 
     def test_calculate_fid_numerical_instability_uses_offset(self):
-        from eval_learn.metrics.fid.metric import _calculate_fid
+        from eval_unlearn.metrics.fid.metric import _calculate_fid
         mu = np.array([0.0, 0.0])
         sigma = np.array([[1e-300, 0.0], [0.0, 1e-300]])
         result = _calculate_fid(mu, sigma, mu, sigma)
         assert np.isfinite(result)
 
     def test_calculate_fid_complex_covmean_near_real_uses_real_part(self):
-        from eval_learn.metrics.fid.metric import _calculate_fid
+        from eval_unlearn.metrics.fid.metric import _calculate_fid
         complex_mat = np.array([[1.0 + 1e-10j, 0.0], [0.0, 1.0 + 1e-10j]])
-        with patch("eval_learn.metrics.fid.metric.linalg.sqrtm",
+        with patch("eval_unlearn.metrics.fid.metric.linalg.sqrtm",
                    return_value=(complex_mat, None)):
             mu = np.array([0.0, 0.0])
             result = _calculate_fid(mu, np.eye(2), mu, np.eye(2))
         assert isinstance(result, float)
 
     def test_calculate_fid_complex_large_imag_returns_inf(self):
-        from eval_learn.metrics.fid.metric import _calculate_fid
+        from eval_unlearn.metrics.fid.metric import _calculate_fid
         complex_mat = np.array([[1.0 + 1.0j, 0.0], [0.0, 1.0 + 1.0j]])
-        with patch("eval_learn.metrics.fid.metric.linalg.sqrtm",
+        with patch("eval_unlearn.metrics.fid.metric.linalg.sqrtm",
                    return_value=(complex_mat, None)):
             mu = np.array([0.0, 0.0])
             result = _calculate_fid(mu, np.eye(2), mu, np.eye(2))

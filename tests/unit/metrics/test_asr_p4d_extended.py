@@ -13,12 +13,12 @@ def _dummy_image(color=(50, 100, 150)):
 
 def _make_p4d_metric(detector="nudenet", concept="nudity", **kwargs):
     """Build ASRP4D with all external deps mocked."""
-    with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-         patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-         patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
-         patch("eval_learn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
-         patch("eval_learn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
-        from eval_learn.metrics.asr_p4d.metric import ASRP4D
+    with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
+        from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
         metric = ASRP4D(
             concept_name=concept,
             detector=detector,
@@ -53,7 +53,7 @@ class TestASRP4DLoadDatasetGeneration:
             **extra,
         )
         # Patch P4DGenerator at the module level for the call
-        import eval_learn.metrics.asr_p4d.metric as m
+        import eval_unlearn.metrics.asr_p4d.metric as m
         m.P4DGenerator = MagicMock(return_value=mock_p4d_gen)
         return metric, prompts_csv, mock_p4d_gen
 
@@ -93,7 +93,7 @@ class TestASRP4DLoadDatasetGeneration:
             detector="nudenet", concept="nudity",
             target_prompts_path=str(prompts_csv),
         )
-        import eval_learn.metrics.asr_p4d.metric as m
+        import eval_unlearn.metrics.asr_p4d.metric as m
         m.P4DGenerator = MagicMock(return_value=mock_p4d_gen)
 
         from torch.utils.data import DataLoader
@@ -127,11 +127,11 @@ class TestASRP4DLoadDatasetGeneration:
 class TestASRP4DUpdateCLIP:
     def _make_clip_metric(self, sim_threshold=0.0):
         import torch
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor") as mock_proc:
             mock_model = MagicMock()
             mock_model.get_image_features.return_value = torch.ones(1, 4)
             mock_model.get_text_features.return_value = torch.ones(1, 4)
@@ -139,7 +139,7 @@ class TestASRP4DUpdateCLIP:
             mock_model.to.return_value = mock_model
             mock_model.eval.return_value = mock_model
             mock_proc.from_pretrained.return_value = MagicMock()
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             metric = ASRP4D(
                 concept_name="violence",
                 detector="clip",
@@ -192,12 +192,12 @@ class TestASRP4DConfigExtended:
 
     def test_custom_erase_id_no_checkpoint_warns(self):
         """erase_id='custom' without checkpoint path should log warning, not raise."""
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             # Should not raise — just log a warning
             metric = ASRP4D(
                 concept_name="nudity",
@@ -207,32 +207,32 @@ class TestASRP4DConfigExtended:
         assert metric is not None
 
     def test_p4d_generator_none_raises(self):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", None):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", None):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             with pytest.raises(ImportError, match="p4d"):
                 ASRP4D(concept_name="nudity", detector="nudenet", erase_id="std")
 
     def test_nudenet_none_raises(self):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", None):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", None):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             with pytest.raises(RuntimeError, match="nudenet"):
                 ASRP4D(concept_name="nudity", detector="nudenet", erase_id="std")
 
     def test_q16_none_raises(self):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", None):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", None):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             with pytest.raises(RuntimeError, match="q16"):
                 ASRP4D(concept_name="violence", detector="q16", erase_id="std")
 
     def test_clip_none_raises(self):
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.CLIPModel", None):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel", None):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             with pytest.raises(RuntimeError, match="transformers"):
                 ASRP4D(concept_name="violence", detector="clip", erase_id="std")
 

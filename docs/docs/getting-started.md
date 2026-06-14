@@ -13,10 +13,10 @@
 
 ## Installation
 
-### 1. Install eval-learn
+### 1. Install eval-unlearn
 
 ```bash
-pip install eval-learn
+pip install eval-unlearn
 ```
 
 ### 2. Install technique packages
@@ -47,7 +47,7 @@ pip install -e concept-steerers/
 pip install -e advunlearn/
 ```
 
-SLD is included in `eval-learn` directly and requires no extra install as it is implemented within the [Hugging-Face] [diffusers] library, a required dependency of the package.
+SLD is included in `eval-unlearn` directly and requires no extra install as it is implemented within the [Hugging-Face] [diffusers] library, a required dependency of the package.
 
 ### 3. Metric packages.
 
@@ -67,9 +67,9 @@ pip install -e Q16/
 Some metrics require additional dependencies:
 
 ```bash
-pip install "eval-learn[asr]"    # ASR — requires NudeNet
-pip install "eval-learn[fid]"    # FID — requires torchvision
-pip install "eval-learn[coco]"   # COCO-based metrics — requires torchvision
+pip install "eval-unlearn[asr]"    # ASR — requires NudeNet
+pip install "eval-unlearn[fid]"    # FID — requires torchvision
+pip install "eval-unlearn[coco]"   # COCO-based metrics — requires torchvision
 ```
 
 ### CUDA wheels
@@ -96,7 +96,7 @@ Eval-Learn loads this automatically on startup. Alternatively export it in your 
 Benchmarks are defined in a config file and run with:
 
 ```bash
-eval-learn run --config config.yaml   # or config.json
+eval-unlearn run --config config.yaml   # or config.json
 ```
 
 !!! warning "Check compatibility before running"
@@ -187,13 +187,13 @@ Results are written to `output_dir` as JSON.
 Run and push in one step:
 
 ```bash
-eval-learn run --config config.yaml --hf-repo your-org/results
+eval-unlearn run --config config.yaml --hf-repo your-org/results
 ```
 
 Or push an existing results directory separately:
 
 ```bash
-eval-learn push --repo your-org/results --local-dir results/mace_nudity
+eval-unlearn push --repo your-org/results --local-dir results/mace_nudity
 ```
 
 ## Useful commands
@@ -201,13 +201,13 @@ eval-learn push --repo your-org/results --local-dir results/mace_nudity
 List all installed techniques and metrics:
 
 ```bash
-eval-learn plugins
+eval-unlearn plugins
 ```
 
 Show the base model each technique uses:
 
 ```bash
-eval-learn models
+eval-unlearn models
 ```
 
 ## Next steps
