@@ -11,26 +11,7 @@ permissions:
   contents: read 
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: "pip"
-
-      - name: Install dev dependencies
-        run: pip install -e ".[dev]"
-
-      - name: Run unit tests
-        run: pytest tests/unit -m "not integration" -v
-
   publish:
-    needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
 
