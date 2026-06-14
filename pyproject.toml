@@ -36,10 +36,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/nikhilr2907/eval-unlearn"
+Homepage = "https://github.com/REAL-Lab-Imperial/Eval-Unlearn"
 Documentation = "https://eval-unlearn.readthedocs.io"
-Source = "https://github.com/nikhilr2907/eval-unlearn"
-"Bug Tracker" = "https://github.com/nikhilr2907/eval-unlearn/issues"
+Source = "https://github.com/REAL-Lab-Imperial/Eval-Unlearn"
+"Bug Tracker" = "https://github.com/REAL-Lab-Imperial/Eval-Unlearn/issues"
 
 [project.optional-dependencies]
 # Metric extras (PyPI packages)
