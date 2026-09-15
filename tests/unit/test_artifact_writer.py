@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from PIL import Image
 
-from eval_learn.artifacts.writer import ArtifactWriter
+from eval_unlearn.artifacts.writer import ArtifactWriter
 
 
 def _dummy_image(color=(10, 20, 30)):

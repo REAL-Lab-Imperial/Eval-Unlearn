@@ -10,8 +10,8 @@ from PIL import Image
 sys.modules.setdefault("ring_a_bell", MagicMock())
 sys.modules.setdefault("ring_a_bell.encoder", MagicMock())
 
-from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric  # noqa: E402
-from eval_learn.types import MetricResult  # noqa: E402
+from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric  # noqa: E402
+from eval_unlearn.types import MetricResult  # noqa: E402
 
 DIM = 16  # small embedding dimension for test tensors
 
@@ -22,8 +22,8 @@ def _make_metric(concept="nudity", threshold=0.3, device="cpu"):
     Uses detector="clip" explicitly so that tests can control CLIP features
     via _set_clip_response regardless of whether nudenet/q16 is installed.
     """
-    with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_model_cls, \
-            patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls:
+    with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_model_cls, \
+            patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls:
         mock_model_cls.from_pretrained.return_value = MagicMock()
         mock_proc_cls.from_pretrained.return_value = MagicMock()
 
@@ -255,22 +255,22 @@ class TestCompute:
 # ---------------------------------------------------------------------------
 class TestASRRingABellConfig:
     def test_invalid_detector_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        from eval_unlearn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
         with pytest.raises(ValueError, match="detector must be one of"):
             ASRRingABellConfig(concept_name="nudity", detector="bad")
 
     def test_nudenet_on_non_nudity_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        from eval_unlearn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
         with pytest.raises(ValueError, match="only valid for nudity"):
             ASRRingABellConfig(concept_name="dogs", detector="nudenet")
 
     def test_q16_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        from eval_unlearn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
         with pytest.raises(ValueError, match="q16_threshold"):
             ASRRingABellConfig(concept_name="nudity", q16_threshold=2.0)
 
     def test_similarity_threshold_out_of_range_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
+        from eval_unlearn.metrics.asr_ring_a_bell.config import ASRRingABellConfig
         with pytest.raises(ValueError, match="similarity_threshold"):
             ASRRingABellConfig(concept_name="nudity", similarity_threshold=-0.5)
 
@@ -281,14 +281,14 @@ class TestASRRingABellConfig:
 def _make_nudenet_metric():
     """Create a ring-a-bell metric with detector='nudenet' and mocked externals."""
     import tempfile, csv, os
-    from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+    from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
     tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
     csv.writer(tmp).writerow(["prompt"])
     csv.writer(tmp).writerow(["a test prompt"])
     tmp.close()
-    with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector") as mock_nd:
+    with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector") as mock_nd:
         mock_cm.from_pretrained.return_value = MagicMock()
         mock_cp.from_pretrained.return_value = MagicMock()
         mock_nd.return_value = MagicMock()
@@ -306,13 +306,13 @@ def _make_nudenet_metric():
 class TestASRRingABellMetricBranches:
     def test_auto_detector_resolves_to_nudenet_for_nudity(self):
         import tempfile, csv, os
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
         csv.writer(tmp).writerow(["prompt"])
         tmp.close()
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"):
             mock_cm.from_pretrained.return_value = MagicMock()
             mock_cp.from_pretrained.return_value = MagicMock()
             metric = ASRRingABellMetric(
@@ -327,14 +327,14 @@ class TestASRRingABellMetricBranches:
 
     def test_nudenet_none_raises_runtime_error(self):
         import tempfile, csv, os
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
         csv.writer(tmp).writerow(["prompt"])
         tmp.close()
         try:
-            with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
-                 patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
-                 patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", None):
+            with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+                 patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+                 patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", None):
                 mock_cm.from_pretrained.return_value = MagicMock()
                 mock_cp.from_pretrained.return_value = MagicMock()
                 with pytest.raises(RuntimeError, match="nudenet"):
@@ -350,13 +350,13 @@ class TestASRRingABellMetricBranches:
 
     def test_concept_vector_path_warning_when_discovery_disabled(self):
         import tempfile, csv, os
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
         csv.writer(tmp).writerow(["prompt"])
         tmp.close()
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"):
             mock_cm.from_pretrained.return_value = MagicMock()
             mock_cp.from_pretrained.return_value = MagicMock()
             metric = ASRRingABellMetric(
@@ -371,13 +371,13 @@ class TestASRRingABellMetricBranches:
 
     def test_generated_prompts_output_warning_when_discovery_disabled(self):
         import tempfile, csv, os
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False, newline="")
         csv.writer(tmp).writerow(["prompt"])
         tmp.close()
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"):
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cm, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_cp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"):
             mock_cm.from_pretrained.return_value = MagicMock()
             mock_cp.from_pretrained.return_value = MagicMock()
             metric = ASRRingABellMetric(
@@ -448,7 +448,7 @@ class TestASRRingABellMetricBranches:
         metric = _make_nudenet_metric()
         metric.nude_detector.detect.return_value = []
         img = Image.new("RGB", (64, 64))
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.os.remove",
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.os.remove",
                    side_effect=OSError("locked")):
             metric.update([img], ["prompt"])
         assert metric._total == 1
@@ -459,7 +459,7 @@ class TestASRRingABellMetricBranches:
             csv.writer(f).writerow(["prompt"])
             seed_csv = f.name
         try:
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             with pytest.raises(FileNotFoundError, match="Concept vector not found"):
                 ASRRingABellMetric(
                     concept_name="nudity",
@@ -481,8 +481,8 @@ class TestASRRingABellMetricBranches:
 
         output_csv = str(tmp_path / "generated.csv")
 
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_model_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls:
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_model_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls:
             mock_model = MagicMock()
             mock_model.to.return_value = mock_model
             mock_model_cls.from_pretrained.return_value = mock_model

@@ -26,7 +26,7 @@ def _blank_image(size=(256, 256), color=(180, 160, 140)):
 class TestASRI2PNudenetReal:
     @pytest.fixture(scope="class")
     def metric(self, nude_detector):
-        from eval_learn.metrics.asr_i2p.metric import ASRMetric
+        from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
         m = ASRMetric(concept_name="nudity", detector="nudenet", limit=5)
         m.nude_detector = nude_detector
         return m
@@ -49,7 +49,7 @@ class TestASRI2PNudenetReal:
     def test_compute_after_update(self, metric):
         metric._unsafe_count = 0
         metric._total = 5
-        from eval_learn.types import MetricResult
+        from eval_unlearn.types import MetricResult
         result = metric.compute()
         assert isinstance(result, MetricResult)
         assert result.value == 0.0
@@ -70,7 +70,7 @@ class TestASRI2PNudenetReal:
 class TestMMADiffusionNudenetReal:
     @pytest.fixture(scope="class")
     def metric(self, nude_detector):
-        from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+        from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
         m = MMADiffusionMetric(
             concept_name="nudity",
             output_csv="/tmp/mma_int_test.csv",
@@ -103,8 +103,8 @@ class TestASRP4DNudenetReal:
         prompts_csv = tmp_path_factory.mktemp("p4d_nd") / "prompts.csv"
         prompts_csv.write_text("adversarial_prompt,target_prompt\nadv1,naked person\n")
         from unittest.mock import patch, MagicMock
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()):
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()):
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             m = ASRP4D(
                 concept_name="nudity",
                 detector="nudenet",
@@ -131,13 +131,13 @@ class TestRingABellNudenetReal:
     def metric(self, nude_detector, clip_model_and_processor):
         from unittest.mock import patch, MagicMock
         clip_model, clip_proc = clip_model_and_processor
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             m = ASRRingABellMetric(
                 concept_name="nudity",
                 detector="nudenet",
@@ -163,13 +163,13 @@ class TestERRNudenetReal:
     def metric(self, nude_detector, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
         from unittest.mock import patch
-        with patch("eval_learn.metrics.err.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.err.metric.CLIPProcessor") as mock_proc, \
-             patch("eval_learn.metrics.err.metric.NudeDetector") as mock_nd:
+        with patch("eval_unlearn.metrics.err.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.err.metric.CLIPProcessor") as mock_proc, \
+             patch("eval_unlearn.metrics.err.metric.NudeDetector") as mock_nd:
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
             mock_nd.return_value = nude_detector
-            from eval_learn.metrics.err.metric import ERRMetric
+            from eval_unlearn.metrics.err.metric import ERRMetric
             m = ERRMetric(
                 clip_model_name="openai/clip-vit-base-patch16",
                 device=device,
@@ -180,7 +180,7 @@ class TestERRNudenetReal:
         return m
 
     def test_adversarial_blank_image_not_unsafe(self, metric):
-        from eval_learn.metrics.err.metric import _EXPECTED_PRESENCE
+        from eval_unlearn.metrics.err.metric import _EXPECTED_PRESENCE
         metric._counts = {cat: {"success": 0, "evaluated": 0} for cat in _EXPECTED_PRESENCE}
         imgs = [_blank_image()]
         metadata = {

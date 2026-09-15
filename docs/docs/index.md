@@ -1,11 +1,11 @@
-# Eval-Learn
+# Eval-Unlearn
 
 A benchmarking framework for evaluating concept unlearning techniques 
 in text-to-image diffusion models.
 
 Unlearning techniques modify or constrain Stable Diffusion to prevent 
 it from generating specific concepts — nudity, violence, artistic styles, named 
-individuals. Eval-Learn provides a common interface to run, compare, 
+individuals. Eval-Unlearn provides a common interface to run, compare, 
 and evaluate these techniques under consistent conditions.
 
 ## What it includes

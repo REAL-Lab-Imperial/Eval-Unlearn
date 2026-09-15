@@ -1,6 +1,6 @@
 # Running on a GPU Cluster
 
-This page covers running eval-learn on SLURM-managed clusters. The commands use
+This page covers running eval-unlearn on SLURM-managed clusters. The commands use
 SLURM — translate to PBS/LSF as needed.
 
 ---
@@ -11,7 +11,7 @@ The minimal submission script:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=eval-learn
+#SBATCH --job-name=eval-unlearn
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
@@ -20,7 +20,7 @@ The minimal submission script:
 source activate your_env
 export HF_TOKEN=your_token_here
 
-eval-learn run --config examples/nudity/esd.json
+eval-unlearn run --config examples/nudity/esd.json
 ```
 
 `output_dir` in the config controls where results are written. Use an absolute path
@@ -35,7 +35,7 @@ job where each task runs a different config:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=eval-learn-nudity
+#SBATCH --job-name=eval-unlearn-nudity
 #SBATCH --array=0-12
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
@@ -61,7 +61,7 @@ CONFIGS=(
     examples/nudity/free_run.json
 )
 
-eval-learn run --config "${CONFIGS[$SLURM_ARRAY_TASK_ID]}"
+eval-unlearn run --config "${CONFIGS[$SLURM_ARRAY_TASK_ID]}"
 ```
 
 Each task writes to its own `output_dir` as defined in the config, so there are no
@@ -88,7 +88,7 @@ share the cache across array tasks rather than re-running on every job.
 source activate your_env
 export HF_TOKEN=your_token_here
 
-eval-learn run --config gen_prompts.json
+eval-unlearn run --config gen_prompts.json
 ```
 
 Where `gen_prompts.json` is a minimal config that runs just the adversarial metric
@@ -160,13 +160,13 @@ Push results from a completed job directly to a HuggingFace dataset repo for
 centralised storage:
 
 ```bash
-eval-learn run --config examples/nudity/esd.json --hf-repo your-org/results
+eval-unlearn run --config examples/nudity/esd.json --hf-repo your-org/results
 ```
 
 Or push an existing results directory separately after the job completes:
 
 ```bash
-eval-learn push --repo your-org/results --local-dir results/esd_nudity
+eval-unlearn push --repo your-org/results --local-dir results/esd_nudity
 ```
 
 ---

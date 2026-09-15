@@ -5,7 +5,7 @@ Covers get_erase_concept, validate_nudity_metrics, validate_uce_concept,
 validate_ua_ira_paths, and validate_technique_metric_pair.
 """
 import pytest
-from eval_learn.runners.validation import (
+from eval_unlearn.runners.validation import (
     get_erase_concept,
     validate_nudity_metrics,
     validate_uce_concept,

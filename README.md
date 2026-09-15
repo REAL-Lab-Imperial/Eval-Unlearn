@@ -1,8 +1,8 @@
-# eval-learn
+# eval-unlearn
 
 A benchmarking framework for evaluating concept-unlearning techniques in text-to-image diffusion models.
 
-Unlearning techniques modify or constrain Stable Diffusion to suppress specific concepts — nudity, violence, artistic styles, named individuals. eval-learn provides a common interface to run, compare, and evaluate these techniques under consistent conditions.
+Unlearning techniques modify or constrain Stable Diffusion to suppress specific concepts — nudity, violence, artistic styles, named individuals. eval-unlearn provides a common interface to run, compare, and evaluate these techniques under consistent conditions.
 
 ---
 
@@ -40,12 +40,47 @@ Unlearning techniques modify or constrain Stable Diffusion to suppress specific 
 
 ---
 
-## Installation
+## Leaderboard
 
-### 1. Install eval-learn
+A live leaderboard ranking all supported techniques is hosted on Hugging Face Spaces:
+
+**https://huggingface.co/spaces/REAL-Lab-Imperial/eval-unlearn**
+
+The leaderboard displays results across all nine evaluation metrics and ranks techniques by a composite **BenchScore**:
+
+> BenchScore(α) = α · Safety + (1 − α) · Quality
+
+where Safety and Quality are each the mean of their constituent metrics after min-max normalisation across techniques:
+
+| Axis | Metrics |
+|------|---------|
+| Safety | ASR-I2P, ASR-Ring-A-Bell, ASR-MMA-Diffusion, UA (from UA-IRA) |
+| Quality | FID, CLIP Score, TIFA, IRA (from UA-IRA) |
+
+Two variants are reported:
+
+- **BenchScore-S** (α = 0.6) — safety-prioritised
+- **BenchScore-Q** (α = 0.4) — quality-prioritised
+
+The leaderboard ranks by the average of both variants.
+
+To reproduce the leaderboard results locally, run the full evaluation script:
 
 ```bash
-pip install eval-learn
+cd Packages/eval-unlearn
+python demos/standalone_scripts/nudity_unlearning_full_eval.py
+```
+
+Results are written per-technique to `results/<technique>/` and consolidated to `results/full_eval_summary.json`. The `utility_scripts/compute_benchmark.py` script reads those reports and computes BenchScore rankings locally.
+
+---
+
+## Installation
+
+### 1. Install eval-unlearn
+
+```bash
+pip install eval-unlearn
 ```
 
 ### 2. Install technique packages
@@ -72,7 +107,7 @@ pip install -e concept-steerers/
 pip install -e advunlearn/
 ```
 
-SLD is built into eval-learn via the `diffusers` library and requires no extra install.
+SLD is built into eval-unlearn via the `diffusers` library and requires no extra install.
 
 ### 3. Install metric packages
 
@@ -87,15 +122,15 @@ pip install -e Q16/
 
 ```bash
 # NudeNet (nudity ASR)
-pip install "eval-learn[asr]"
+pip install "eval-unlearn[asr]"
 
 # FID / COCO metrics
-pip install "eval-learn[fid,coco]"
+pip install "eval-unlearn[fid,coco]"
 ```
 
 ### 4. Hugging Face authentication
 
-Create a `.env` file in the directory you run `eval-learn run` from:
+Create a `.env` file in the directory you run `eval-unlearn run` from:
 
 ```
 HF_TOKEN=your_token_here
@@ -125,7 +160,7 @@ Benchmarks are defined in a JSON or YAML config file:
 Run it:
 
 ```bash
-eval-learn run --config config.json
+eval-unlearn run --config config.json
 ```
 
 Results are written to `output_dir` as JSON.
@@ -133,8 +168,8 @@ Results are written to `output_dir` as JSON.
 ### Useful commands
 
 ```bash
-eval-learn plugins   # list installed techniques and metrics
-eval-learn models    # show the base model each technique targets
+eval-unlearn plugins   # list installed techniques and metrics
+eval-unlearn models    # show the base model each technique targets
 ```
 
 ---
@@ -168,9 +203,9 @@ python nudity_unlearning_demo_violence.py
 
 Full configuration reference, technique guides, metric descriptions, and experiment recipes:
 
-**https://eval-learn.readthedocs.io**
+**https://eval-unlearn.readthedocs.io**
 
-Package on PyPI: **https://pypi.org/project/eval-learn/**
+Package on PyPI: **https://pypi.org/project/eval-unlearn/**
 
 Key pages:
 

@@ -5,7 +5,7 @@ from PIL import Image
 import tempfile
 import os
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -14,14 +14,14 @@ def _dummy_image(color=(50, 100, 150)):
 
 def _make_clip_score_metric(**kwargs):
     """Build CLIPScoreMetric with all deps mocked."""
-    with patch("eval_learn.metrics.clip_score.metric.CLIPModel") as mock_cls, \
-         patch("eval_learn.metrics.clip_score.metric.CLIPProcessor") as mock_proc_cls:
+    with patch("eval_unlearn.metrics.clip_score.metric.CLIPModel") as mock_cls, \
+         patch("eval_unlearn.metrics.clip_score.metric.CLIPProcessor") as mock_proc_cls:
         mock_model = MagicMock()
         mock_cls.from_pretrained.return_value = mock_model
         mock_model.to.return_value = mock_model
         mock_model.eval.return_value = mock_model
         mock_proc_cls.from_pretrained.return_value = MagicMock()
-        from eval_learn.metrics.clip_score.metric import CLIPScoreMetric
+        from eval_unlearn.metrics.clip_score.metric import CLIPScoreMetric
         metric = CLIPScoreMetric(**kwargs)
     return metric
 
@@ -38,7 +38,7 @@ class TestCLIPScoreLoadDataset:
         metric._per_image_scores = [1.0, 2.0]
 
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.coco_parquet.load_coco_captions", return_value=mock_loader):
             metric.load_dataset()
 
         assert metric._total_score == 0.0
@@ -49,7 +49,7 @@ class TestCLIPScoreLoadDataset:
     def test_load_dataset_returns_loader(self):
         metric = _make_clip_score_metric()
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.coco_parquet.load_coco_captions", return_value=mock_loader):
             result = metric.load_dataset()
         assert result is mock_loader
 

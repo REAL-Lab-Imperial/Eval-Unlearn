@@ -47,9 +47,9 @@ class TestQ16ClassifierReal:
 class TestASRI2PQ16Real:
     @pytest.fixture(scope="class")
     def metric(self, q16_classifier, device):
-        with patch("eval_learn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
             mock_cls.return_value = q16_classifier
-            from eval_learn.metrics.asr_i2p.metric import ASRMetric
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
             m = ASRMetric(concept_name="violence", detector="q16", device=device, limit=5)
         m.q16_classifier = q16_classifier
         return m
@@ -81,9 +81,9 @@ class TestASRI2PQ16Real:
 class TestMMADiffusionQ16Real:
     @pytest.fixture(scope="class")
     def metric(self, q16_classifier, device):
-        with patch("eval_learn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_cls:
             mock_cls.return_value = q16_classifier
-            from eval_learn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             m = MMADiffusionMetric(
                 concept_name="violence",
                 output_csv="/tmp/mma_q16_int.csv",
@@ -121,10 +121,10 @@ class TestASRP4DQ16Real:
     def metric(self, q16_classifier, device, tmp_path_factory):
         prompts_csv = tmp_path_factory.mktemp("p4d") / "prompts.csv"
         prompts_csv.write_text("adversarial_prompt,target_prompt\nadv1,violent scene\n")
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier") as mock_cls:
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier") as mock_cls:
             mock_cls.return_value = q16_classifier
-            from eval_learn.metrics.asr_p4d.metric import ASRP4D
+            from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
             m = ASRP4D(
                 concept_name="violence",
                 detector="q16",
@@ -150,16 +150,16 @@ class TestRingABellQ16Real:
     @pytest.fixture(scope="class")
     def metric(self, q16_classifier, clip_model_and_processor, device):
         clip_model, clip_proc = clip_model_and_processor
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc:
             mock_q16.return_value = q16_classifier
             mock_cls.from_pretrained.return_value = clip_model
             mock_proc.from_pretrained.return_value = clip_proc
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             m = ASRRingABellMetric(
                 concept_name="violence",
                 detector="q16",

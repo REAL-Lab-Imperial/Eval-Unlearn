@@ -19,7 +19,7 @@ pytestmark = pytest.mark.integration
 class TestLoadConfig:
 
     def test_load_json_config(self, tmp_path):
-        from eval_learn.cli import _load_config
+        from eval_unlearn.cli import _load_config
         cfg = {"technique": {"name": "ssd"}, "metric": {"name": "asr_p4d"}}
         p = tmp_path / "cfg.json"
         p.write_text(json.dumps(cfg))
@@ -27,12 +27,12 @@ class TestLoadConfig:
         assert result["technique"]["name"] == "ssd"
 
     def test_missing_file_exits(self, tmp_path):
-        from eval_learn.cli import _load_config
+        from eval_unlearn.cli import _load_config
         with pytest.raises(SystemExit):
             _load_config(str(tmp_path / "nonexistent.json"))
 
     def test_yaml_without_pyyaml_exits(self, tmp_path):
-        from eval_learn.cli import _load_config
+        from eval_unlearn.cli import _load_config
         p = tmp_path / "cfg.yaml"
         p.write_text("technique:\n  name: ssd\n")
         with patch.dict("sys.modules", {"yaml": None}):
@@ -49,7 +49,7 @@ class TestLoadConfig:
 class TestParseMetricsList:
 
     def test_parses_names_and_configs(self):
-        from eval_learn.cli import _parse_metrics_list
+        from eval_unlearn.cli import _parse_metrics_list
         items = [
             {"name": "asr_p4d", "config": {"concept_name": "nudity"}},
             {"name": "clip_score"},
@@ -60,7 +60,7 @@ class TestParseMetricsList:
         assert "clip_score" not in configs  # no config provided
 
     def test_missing_name_exits(self):
-        from eval_learn.cli import _parse_metrics_list
+        from eval_unlearn.cli import _parse_metrics_list
         with pytest.raises(SystemExit):
             _parse_metrics_list([{"config": {}}])
 
@@ -71,20 +71,20 @@ class TestParseMetricsList:
 class TestBuildSingleRunner:
 
     def test_missing_technique_name_exits(self, tmp_path):
-        from eval_learn.cli import _build_single_runner
+        from eval_unlearn.cli import _build_single_runner
         cfg = {"technique": {}, "metric": {"name": "asr_p4d"}}
         with pytest.raises(SystemExit):
             _build_single_runner(cfg, str(tmp_path))
 
     def test_missing_metric_name_exits(self, tmp_path):
-        from eval_learn.cli import _build_single_runner
+        from eval_unlearn.cli import _build_single_runner
         cfg = {"technique": {"name": "ssd"}, "metric": {}}
         with pytest.raises(SystemExit):
             _build_single_runner(cfg, str(tmp_path))
 
     def test_returns_runner_when_valid(self, tmp_path):
-        from eval_learn.cli import _build_single_runner
-        from eval_learn.registry.local import _TECHNIQUES, _METRICS
+        from eval_unlearn.cli import _build_single_runner
+        from eval_unlearn.registry.local import _TECHNIQUES, _METRICS
         # Register a dummy technique to avoid import error
         class _T:
             def __init__(self, **kw): pass
@@ -96,10 +96,10 @@ class TestBuildSingleRunner:
                 "metric": {"name": "asr_p4d", "config": {"concept_name": "violence",
                     "erase_id": "std", "detector": "q16"}},
             }
-            with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-                 patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
+            with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+                 patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
                 runner = _build_single_runner(cfg, str(tmp_path))
-            from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+            from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
             assert isinstance(runner, SingleBenchmarkRunner)
         finally:
             _TECHNIQUES.pop("_cli_dummy", None)
@@ -111,13 +111,13 @@ class TestBuildSingleRunner:
 class TestBuildMultiRunner:
 
     def test_missing_technique_name_exits(self, tmp_path):
-        from eval_learn.cli import _build_multi_runner
+        from eval_unlearn.cli import _build_multi_runner
         cfg = {"technique": {}, "metrics": [{"name": "asr_p4d"}]}
         with pytest.raises(SystemExit):
             _build_multi_runner(cfg, str(tmp_path))
 
     def test_empty_metrics_exits(self, tmp_path):
-        from eval_learn.cli import _build_multi_runner
+        from eval_unlearn.cli import _build_multi_runner
         cfg = {"technique": {"name": "ssd"}, "metrics": []}
         with pytest.raises(SystemExit):
             _build_multi_runner(cfg, str(tmp_path))
@@ -144,7 +144,7 @@ class TestCmdRun:
         }
         cfg_path = self._write_config(tmp_path, cfg)
 
-        from eval_learn.registry.local import _TECHNIQUES
+        from eval_unlearn.registry.local import _TECHNIQUES
         from PIL import Image
         class _CmdDummy:
             def __init__(self, **kw): pass
@@ -153,11 +153,11 @@ class TestCmdRun:
         _TECHNIQUES["_cmd_dummy"] = _CmdDummy
         try:
             mock_report = {"run_id": "abc1", "value": 0.0}
-            with patch("eval_learn.runners.single_benchmark_runner.SingleBenchmarkRunner.run",
+            with patch("eval_unlearn.runners.single_benchmark_runner.SingleBenchmarkRunner.run",
                        return_value=mock_report), \
-                 patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-                 patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
-                from eval_learn.cli import cmd_run
+                 patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+                 patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
+                from eval_unlearn.cli import cmd_run
                 args = MagicMock()
                 args.config = cfg_path
                 args.hf_repo = None
@@ -178,18 +178,18 @@ class TestCmdRun:
         }
         cfg_path = self._write_config(tmp_path, cfg)
 
-        from eval_learn.registry.local import _TECHNIQUES
+        from eval_unlearn.registry.local import _TECHNIQUES
         class _CmdDummyM:
             def __init__(self, **kw): pass
             def generate(self, prompts, **kw): return []
         _TECHNIQUES["_cmd_dummy_m"] = _CmdDummyM
         try:
             mock_report = {"run_id": "abc2"}
-            with patch("eval_learn.runners.multi_benchmark_runner.MultiBenchmarkRunner.run",
+            with patch("eval_unlearn.runners.multi_benchmark_runner.MultiBenchmarkRunner.run",
                        return_value=mock_report), \
-                 patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-                 patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
-                from eval_learn.cli import cmd_run
+                 patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+                 patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()):
+                from eval_unlearn.cli import cmd_run
                 args = MagicMock()
                 args.config = cfg_path
                 args.hf_repo = None
@@ -203,7 +203,7 @@ class TestCmdRun:
         """Config missing technique exits with SystemExit."""
         cfg = {"output_dir": str(tmp_path)}
         cfg_path = self._write_config(tmp_path, cfg)
-        from eval_learn.cli import cmd_run
+        from eval_unlearn.cli import cmd_run
         args = MagicMock()
         args.config = cfg_path
         args.hf_repo = None
@@ -219,13 +219,13 @@ class TestCmdRun:
         }
         cfg_path = self._write_config(tmp_path, cfg)
 
-        from eval_learn.registry.local import _TECHNIQUES
+        from eval_unlearn.registry.local import _TECHNIQUES
         class _T:
             def __init__(self, **kw): pass
             def generate(self, prompts, **kw): return []
         _TECHNIQUES["_cmd_val_dummy"] = _T
         try:
-            from eval_learn.cli import cmd_run
+            from eval_unlearn.cli import cmd_run
             args = MagicMock()
             args.config = cfg_path
             args.hf_repo = None
@@ -241,7 +241,7 @@ class TestCmdRun:
 class TestCmdPushPull:
 
     def test_cmd_push(self, tmp_path):
-        from eval_learn.cli import cmd_push
+        from eval_unlearn.cli import cmd_push
         local = tmp_path / "results"
         local.mkdir()
         (local / "file.txt").write_text("data")
@@ -250,7 +250,7 @@ class TestCmdPushPull:
         args.repo = "org/my-repo"
         args.remote_path = "experiments"
         args.create_pr = False
-        with patch("eval_learn.hub.HfApi") as mock_api_cls:
+        with patch("eval_unlearn.hub.HfApi") as mock_api_cls:
             mock_api = MagicMock()
             mock_api.upload_folder.return_value = "https://hf.co/commit/abc"
             mock_api_cls.return_value = mock_api
@@ -258,7 +258,7 @@ class TestCmdPushPull:
         mock_api.upload_folder.assert_called_once()
 
     def test_cmd_push_failure_exits(self, tmp_path):
-        from eval_learn.cli import cmd_push
+        from eval_unlearn.cli import cmd_push
         local = tmp_path / "results"
         local.mkdir()
         args = MagicMock()
@@ -266,7 +266,7 @@ class TestCmdPushPull:
         args.repo = "org/repo"
         args.remote_path = "path"
         args.create_pr = False
-        with patch("eval_learn.hub.HfApi") as mock_api_cls:
+        with patch("eval_unlearn.hub.HfApi") as mock_api_cls:
             mock_api = MagicMock()
             mock_api.upload_folder.side_effect = Exception("network error")
             mock_api_cls.return_value = mock_api
@@ -274,30 +274,30 @@ class TestCmdPushPull:
                 cmd_push(args)
 
     def test_cmd_pull_with_remote_path(self, tmp_path):
-        from eval_learn.cli import cmd_pull
+        from eval_unlearn.cli import cmd_pull
         args = MagicMock()
         args.repo = "org/repo"
         args.remote_path = "experiments"
         args.local_dir = str(tmp_path / "dl")
-        with patch("eval_learn.hub.snapshot_download", return_value=str(tmp_path)):
+        with patch("eval_unlearn.hub.snapshot_download", return_value=str(tmp_path)):
             cmd_pull(args)
 
     def test_cmd_pull_all(self, tmp_path):
-        from eval_learn.cli import cmd_pull
+        from eval_unlearn.cli import cmd_pull
         args = MagicMock()
         args.repo = "org/repo"
         args.remote_path = None  # pull all
         args.local_dir = str(tmp_path / "dl")
-        with patch("eval_learn.hub.snapshot_download", return_value=str(tmp_path)):
+        with patch("eval_unlearn.hub.snapshot_download", return_value=str(tmp_path)):
             cmd_pull(args)
 
     def test_cmd_pull_failure_exits(self, tmp_path):
-        from eval_learn.cli import cmd_pull
+        from eval_unlearn.cli import cmd_pull
         args = MagicMock()
         args.repo = "org/repo"
         args.remote_path = "path"
         args.local_dir = str(tmp_path)
-        with patch("eval_learn.hub.snapshot_download", side_effect=Exception("no net")):
+        with patch("eval_unlearn.hub.snapshot_download", side_effect=Exception("no net")):
             with pytest.raises(SystemExit):
                 cmd_pull(args)
 
@@ -308,13 +308,13 @@ class TestCmdPushPull:
 class TestCmdPluginsModels:
 
     def test_cmd_plugins_prints_output(self, capsys):
-        from eval_learn.cli import cmd_plugins
+        from eval_unlearn.cli import cmd_plugins
         cmd_plugins(None)
         out = capsys.readouterr().out
         assert "Techniques" in out or "Metrics" in out
 
     def test_cmd_models_prints_output(self, capsys):
-        from eval_learn.cli import cmd_models
+        from eval_unlearn.cli import cmd_models
         cmd_models(None)
         out = capsys.readouterr().out
         assert "fid" in out or "asr_i2p" in out
@@ -326,23 +326,23 @@ class TestCmdPluginsModels:
 class TestMain:
 
     def test_version_flag(self, capsys):
-        from eval_learn.cli import main
-        with patch("sys.argv", ["eval-learn", "--version"]):
+        from eval_unlearn.cli import main
+        with patch("sys.argv", ["eval-unlearn", "--version"]):
             with pytest.raises(SystemExit) as exc:
                 main()
         assert exc.value.code == 0
 
     def test_no_command_prints_help(self, capsys):
-        from eval_learn.cli import main
-        with patch("sys.argv", ["eval-learn"]):
+        from eval_unlearn.cli import main
+        with patch("sys.argv", ["eval-unlearn"]):
             main()  # should not raise
 
     def test_plugins_command(self, capsys):
-        from eval_learn.cli import main
-        with patch("sys.argv", ["eval-learn", "plugins"]):
+        from eval_unlearn.cli import main
+        with patch("sys.argv", ["eval-unlearn", "plugins"]):
             main()
 
     def test_models_command(self, capsys):
-        from eval_learn.cli import main
-        with patch("sys.argv", ["eval-learn", "models"]):
+        from eval_unlearn.cli import main
+        with patch("sys.argv", ["eval-unlearn", "models"]):
             main()

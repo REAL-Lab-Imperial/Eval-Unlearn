@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from PIL import Image
 
-from eval_learn.types import Dataset, MetricResult
+from eval_unlearn.types import Dataset, MetricResult
 
 
 def _dummy_image():
@@ -34,19 +34,19 @@ def _mock_metric(loader=None, result=None):
 # ---------------------------------------------------------------------------
 class TestGenerateRunId:
     def test_returns_8_char_hex(self):
-        from eval_learn.runners.single_benchmark_runner import generate_run_id
+        from eval_unlearn.runners.single_benchmark_runner import generate_run_id
         rid = generate_run_id("esd", {}, "fid", {}, 1234567890.0)
         assert len(rid) == 8
         assert all(c in "0123456789abcdef" for c in rid)
 
     def test_deterministic(self):
-        from eval_learn.runners.single_benchmark_runner import generate_run_id
+        from eval_unlearn.runners.single_benchmark_runner import generate_run_id
         a = generate_run_id("esd", {}, "fid", {}, 1.0)
         b = generate_run_id("esd", {}, "fid", {}, 1.0)
         assert a == b
 
     def test_different_inputs_differ(self):
-        from eval_learn.runners.single_benchmark_runner import generate_run_id
+        from eval_unlearn.runners.single_benchmark_runner import generate_run_id
         a = generate_run_id("esd", {}, "fid", {}, 1.0)
         b = generate_run_id("mace", {}, "fid", {}, 1.0)
         assert a != b
@@ -57,12 +57,12 @@ class TestGenerateRunId:
 # ---------------------------------------------------------------------------
 class TestGenerateMultiRunId:
     def test_returns_8_char_hex(self):
-        from eval_learn.runners.multi_benchmark_runner import generate_multi_run_id
+        from eval_unlearn.runners.multi_benchmark_runner import generate_multi_run_id
         rid = generate_multi_run_id("esd", {}, ["fid"], {}, "multi", 1.0)
         assert len(rid) == 8
 
     def test_deterministic(self):
-        from eval_learn.runners.multi_benchmark_runner import generate_multi_run_id
+        from eval_unlearn.runners.multi_benchmark_runner import generate_multi_run_id
         a = generate_multi_run_id("esd", {}, ["fid", "asr_i2p"], {}, "multi", 1.0)
         b = generate_multi_run_id("esd", {}, ["asr_i2p", "fid"], {}, "multi", 1.0)
         assert a == b  # metric_names are sorted
@@ -74,12 +74,12 @@ class TestGenerateMultiRunId:
 class TestSingleBenchmarkRunner:
 
     def _make_runner(self, tech_factory, metric_factory, output_dir="/tmp/test_run"):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
 
-        with patch("eval_learn.runners.single_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.single_benchmark_runner.get_technique", return_value=tech_factory), \
-             patch("eval_learn.runners.single_benchmark_runner.get_metric", return_value=metric_factory), \
-             patch("eval_learn.runners.single_benchmark_runner.validate_technique_metric_pair"):
+        with patch("eval_unlearn.runners.single_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_technique", return_value=tech_factory), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_metric", return_value=metric_factory), \
+             patch("eval_unlearn.runners.single_benchmark_runner.validate_technique_metric_pair"):
             runner = SingleBenchmarkRunner(
                 technique_name="esd",
                 metric_name="fid",
@@ -132,13 +132,13 @@ class TestSingleBenchmarkRunner:
         assert report is not None
 
     def test_validation_error_raises_value_error(self):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
-        from eval_learn.runners.validation import ValidationError
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.validation import ValidationError
 
-        with patch("eval_learn.runners.single_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.single_benchmark_runner.get_technique", return_value=MagicMock()), \
-             patch("eval_learn.runners.single_benchmark_runner.get_metric", return_value=MagicMock()), \
-             patch("eval_learn.runners.single_benchmark_runner.validate_technique_metric_pair",
+        with patch("eval_unlearn.runners.single_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_technique", return_value=MagicMock()), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_metric", return_value=MagicMock()), \
+             patch("eval_unlearn.runners.single_benchmark_runner.validate_technique_metric_pair",
                    side_effect=ValidationError("incompatible")):
             with pytest.raises(ValueError, match="incompatible"):
                 SingleBenchmarkRunner(
@@ -148,10 +148,10 @@ class TestSingleBenchmarkRunner:
                 )
 
     def test_unknown_technique_raises(self):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
 
-        with patch("eval_learn.runners.single_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.single_benchmark_runner.get_technique",
+        with patch("eval_unlearn.runners.single_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_technique",
                    side_effect=ValueError("not found")):
             with pytest.raises(ValueError, match="not found"):
                 SingleBenchmarkRunner(
@@ -166,15 +166,15 @@ class TestSingleBenchmarkRunner:
 class TestMultiBenchmarkRunner:
 
     def _make_runner(self, tech_factory, metric_factories, output_dir="/tmp/test_multi"):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
 
         def _get_metric(name):
             return metric_factories[name]
 
-        with patch("eval_learn.runners.multi_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_technique", return_value=tech_factory), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_metric", side_effect=_get_metric), \
-             patch("eval_learn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
+        with patch("eval_unlearn.runners.multi_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_technique", return_value=tech_factory), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_metric", side_effect=_get_metric), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
             runner = MultiBenchmarkRunner(
                 technique_name="esd",
                 metric_names=list(metric_factories.keys()),
@@ -201,11 +201,11 @@ class TestMultiBenchmarkRunner:
         assert "asr_i2p" in report["metric_results"]
 
     def test_duplicate_metric_names_raises(self):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
-        with patch("eval_learn.runners.multi_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_technique", return_value=MagicMock()), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_metric", return_value=MagicMock()), \
-             patch("eval_learn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        with patch("eval_unlearn.runners.multi_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_technique", return_value=MagicMock()), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_metric", return_value=MagicMock()), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
             with pytest.raises(ValueError, match="duplicates"):
                 MultiBenchmarkRunner(
                     technique_name="esd",
@@ -213,10 +213,10 @@ class TestMultiBenchmarkRunner:
                 )
 
     def test_empty_metric_names_raises(self):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
-        with patch("eval_learn.runners.multi_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_technique", return_value=MagicMock()), \
-             patch("eval_learn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        with patch("eval_unlearn.runners.multi_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_technique", return_value=MagicMock()), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
             with pytest.raises(ValueError, match="must not be empty"):
                 MultiBenchmarkRunner(
                     technique_name="esd",
@@ -244,16 +244,16 @@ class TestMultiBenchmarkRunner:
 # ---------------------------------------------------------------------------
 class TestMultiBenchmarkRunnerCoverageGaps:
     def _make_runner(self, tmp_path, loader=None):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
         tech = _mock_technique()
         metric = _mock_metric(loader=loader)
         factories = {"asr_i2p": MagicMock(return_value=metric)}
-        with patch("eval_learn.runners.multi_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_technique",
+        with patch("eval_unlearn.runners.multi_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_technique",
                    return_value=MagicMock(return_value=tech)), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_metric",
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_metric",
                    side_effect=lambda n: factories[n]), \
-             patch("eval_learn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
+             patch("eval_unlearn.runners.multi_benchmark_runner.validate_technique_metric_pair"):
             return MultiBenchmarkRunner(
                 technique_name="esd",
                 metric_names=["asr_i2p"],
@@ -285,18 +285,18 @@ class TestMultiBenchmarkRunnerCoverageGaps:
         assert report is not None
 
     def test_validation_error_raises_value_error(self, tmp_path):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
-        from eval_learn.runners.validation import ValidationError
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        from eval_unlearn.runners.validation import ValidationError
 
         def raise_val(**kw):
             raise ValidationError("incompatible metric for technique")
 
-        with patch("eval_learn.runners.multi_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_technique",
+        with patch("eval_unlearn.runners.multi_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_technique",
                    return_value=MagicMock()), \
-             patch("eval_learn.runners.multi_benchmark_runner.get_metric",
+             patch("eval_unlearn.runners.multi_benchmark_runner.get_metric",
                    return_value=MagicMock()), \
-             patch("eval_learn.runners.multi_benchmark_runner.validate_technique_metric_pair",
+             patch("eval_unlearn.runners.multi_benchmark_runner.validate_technique_metric_pair",
                    side_effect=raise_val):
             with pytest.raises(ValueError, match="incompatible"):
                 MultiBenchmarkRunner(
@@ -311,15 +311,15 @@ class TestMultiBenchmarkRunnerCoverageGaps:
 # ---------------------------------------------------------------------------
 class TestSingleBenchmarkRunnerCoverageGaps:
     def _make_single_runner(self, tmp_path):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         tech = _mock_technique()
         metric = _mock_metric()
-        with patch("eval_learn.runners.single_benchmark_runner.load_entrypoints"), \
-             patch("eval_learn.runners.single_benchmark_runner.get_technique",
+        with patch("eval_unlearn.runners.single_benchmark_runner.load_entrypoints"), \
+             patch("eval_unlearn.runners.single_benchmark_runner.get_technique",
                    return_value=MagicMock(return_value=tech)), \
-             patch("eval_learn.runners.single_benchmark_runner.get_metric",
+             patch("eval_unlearn.runners.single_benchmark_runner.get_metric",
                    return_value=MagicMock(return_value=metric)), \
-             patch("eval_learn.runners.single_benchmark_runner.validate_technique_metric_pair"):
+             patch("eval_unlearn.runners.single_benchmark_runner.validate_technique_metric_pair"):
             return SingleBenchmarkRunner(
                 technique_name="esd",
                 metric_name="asr_i2p",
@@ -340,7 +340,7 @@ class TestSingleBenchmarkRunnerCoverageGaps:
 # ---------------------------------------------------------------------------
 class TestBaseRunnerCoverageGaps:
     def test_concrete_subclass_run(self, tmp_path):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
 
         class ConcreteRunner(BaseRunner):
             def run(self):
@@ -349,7 +349,7 @@ class TestBaseRunnerCoverageGaps:
         assert ConcreteRunner(output_dir=str(tmp_path)).run()["ok"] is True
 
     def test_base_runner_run_returns_none_via_super(self, tmp_path):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
 
         class ForwardingRunner(BaseRunner):
             def run(self):

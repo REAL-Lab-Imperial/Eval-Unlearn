@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from eval_learn.cli import (
+from eval_unlearn.cli import (
     _load_config,
     _parse_metrics_list,
     _build_single_runner,
@@ -79,7 +79,7 @@ class TestBuildRunners:
             _build_single_runner({"technique": {"name": "esd"}}, "out")
 
     def test_build_single_runner_returns_runner(self):
-        with patch("eval_learn.cli.SingleBenchmarkRunner") as mock_cls:
+        with patch("eval_unlearn.cli.SingleBenchmarkRunner") as mock_cls:
             mock_cls.return_value = MagicMock()
             _build_single_runner(
                 {
@@ -105,7 +105,7 @@ class TestBuildRunners:
             _build_multi_runner({"technique": {"name": "esd"}, "metrics": []}, "out")
 
     def test_build_multi_runner_returns_runner(self):
-        with patch("eval_learn.cli.MultiBenchmarkRunner") as mock_cls:
+        with patch("eval_unlearn.cli.MultiBenchmarkRunner") as mock_cls:
             mock_cls.return_value = MagicMock()
             _build_multi_runner(
                 {
@@ -134,7 +134,7 @@ class TestCmdPush:
         return Namespace(**defaults)
 
     def test_push_success(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.return_value = "https://hf.co/commit/abc"
@@ -147,7 +147,7 @@ class TestCmdPush:
         )
 
     def test_push_uses_explicit_remote_path(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.return_value = "https://hf.co/commit/abc"
@@ -158,7 +158,7 @@ class TestCmdPush:
         mock_sync.push_folder.assert_called_once_with(str(tmp_path), "custom/path")
 
     def test_push_failure_exits(self, tmp_path):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.push_folder.side_effect = RuntimeError("network error")
@@ -178,7 +178,7 @@ class TestCmdPull:
         return Namespace(**defaults)
 
     def test_pull_folder_called_when_remote_path_given(self):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.pull_folder.return_value = "/local/path"
@@ -189,7 +189,7 @@ class TestCmdPull:
         mock_sync.pull_all.assert_not_called()
 
     def test_pull_all_called_when_no_remote_path(self):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.pull_all.return_value = "/local/results"
@@ -200,7 +200,7 @@ class TestCmdPull:
         mock_sync.pull_folder.assert_not_called()
 
     def test_pull_failure_exits(self):
-        with patch("eval_learn.hub.HFSync") as mock_cls:
+        with patch("eval_unlearn.hub.HFSync") as mock_cls:
             mock_sync = MagicMock()
             mock_cls.return_value = mock_sync
             mock_sync.pull_all.side_effect = RuntimeError("auth error")
@@ -215,10 +215,10 @@ class TestCmdPull:
 
 class TestCmdPlugins:
     def test_plugins_lists_registered(self, capsys):
-        with patch("eval_learn.registry.entrypoints.load_entrypoints"), \
-             patch("eval_learn.registry.local._TECHNIQUES", {"esd": object()}), \
-             patch("eval_learn.registry.local._METRICS", {"asr": object()}), \
-             patch("eval_learn.registry.local._DATASETS", {"coco": object()}):
+        with patch("eval_unlearn.registry.entrypoints.load_entrypoints"), \
+             patch("eval_unlearn.registry.local._TECHNIQUES", {"esd": object()}), \
+             patch("eval_unlearn.registry.local._METRICS", {"asr": object()}), \
+             patch("eval_unlearn.registry.local._DATASETS", {"coco": object()}):
             cmd_plugins(Namespace())
 
         out = capsys.readouterr().out
@@ -233,22 +233,22 @@ class TestCmdPlugins:
 
 class TestMain:
     def test_version_flag(self, capsys):
-        with patch("sys.argv", ["eval-learn", "--version"]), \
-             patch("eval_learn.cli.load_dotenv"), \
-             patch("eval_learn.__version__", "1.2.3", create=True):
+        with patch("sys.argv", ["eval-unlearn", "--version"]), \
+             patch("eval_unlearn.cli.load_dotenv"), \
+             patch("eval_unlearn.__version__", "1.2.3", create=True):
             with pytest.raises(SystemExit) as exc:
                 main()
         assert exc.value.code == 0
         assert "1.2.3" in capsys.readouterr().out
 
     def test_no_command_prints_help(self, capsys):
-        with patch("sys.argv", ["eval-learn"]):
+        with patch("sys.argv", ["eval-unlearn"]):
             main()  # should not raise or exit
         out = capsys.readouterr().out
-        assert "eval-learn" in out
+        assert "eval-unlearn" in out
 
     def test_unknown_command_prints_help(self, capsys):
-        with patch("sys.argv", ["eval-learn"]):
+        with patch("sys.argv", ["eval-unlearn"]):
             main()
         out = capsys.readouterr().out
         assert out  # some usage text printed

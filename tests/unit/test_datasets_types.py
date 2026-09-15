@@ -82,7 +82,7 @@ def test_dataset_types():
 
 def test_coco_image_download():
     """Validate that COCO images can be downloaded and converted to PIL Images."""
-    from eval_learn.datasets.hf_stream import load_hf_config
+    from eval_unlearn.datasets.hf_stream import load_hf_config
 
     token = os.getenv("HF_TOKEN")
 

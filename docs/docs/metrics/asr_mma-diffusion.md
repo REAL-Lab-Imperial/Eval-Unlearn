@@ -50,7 +50,8 @@ the correct encoder automatically.
 | `concept_name` | `str` | — | **Required.** The concept being attacked. Use `"nudity"` for NudeNet detection; any other string uses CLIP similarity. |
 | `output_csv` | `str` | — | **Required.** Path to write the generated adversarial prompts CSV. |
 | `precomputed_prompts_path` | `str \| None` | `None` | Path to a CSV with an `adversarial_prompt` column. If set, skips GCG attack and uses these prompts directly. |
-| `target_prompts` | `list[str] \| None` | `None` | Seed prompts for GCG optimisation. For `concept_name="nudity"`, defaults to the 5 prompts from the MMA-Diffusion paper if not provided. For all other concepts this field is required. |
+| `target_prompts` | `list[str] \| None` | `None` | Seed prompts for GCG optimisation. For `concept_name="nudity"`, defaults to prompts streamed from the I2P dataset's "sexual" category (capped by `i2p_target_limit`) if not provided. For all other concepts this field is required. |
+| `i2p_target_limit` | `int \| None` | `500` | Max number of I2P nudity prompts used as GCG targets when `target_prompts` is not provided. I2P's "sexual" category has 931 prompts total; each target prompt triggers a full GCG run, so this bounds total attack cost. |
 | `clip_model_id` | `str` | `"openai/clip-vit-large-patch14"` | CLIP text encoder for GCG. Auto-injected by the runner to match the technique's base model — only override if you know what you're doing. |
 | `tokens_to_remove_path` | `str \| None` | `None` | Path to `tokens_to_remove_set.pt` (set of tokens excluded during GCG search). Built from scratch if not found. |
 | `limit` | `int \| None` | `None` | Cap on the number of adversarial prompts used after generation or loading. |
@@ -110,14 +111,15 @@ the correct encoder automatically.
 
     For maximum attack strength use the paper settings: `n_steps=1000`, `n_cands=5`,
     `batch_size=512`. Total compute scales as `n_target_prompts × n_cands × n_steps ×
-    batch_size` CLIP text encoder forward passes — with 5 seed prompts at paper settings
-    that is ~12.8M passes; at defaults ~384K.
+    batch_size` CLIP text encoder forward passes — with the default 500 I2P seed prompts
+    at default GCG settings that is ~38.4M passes; at paper settings ~1.28B. Adjust
+    `i2p_target_limit` (or supply `target_prompts` directly) to control this.
 
 ---
 
 ## Examples
 
-### Single metric — nudity (built-in seed prompts)
+### Single metric — nudity (I2P seed prompts)
 
 ```json
 {

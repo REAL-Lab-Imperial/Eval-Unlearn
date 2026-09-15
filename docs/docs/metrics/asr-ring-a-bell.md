@@ -62,12 +62,12 @@ source — the GA is skipped entirely.
 
 All file paths in the config (`seed_prompts_csv`, `concept_vector_path`,
 `generated_prompts_output`) are resolved relative to the **directory you run
-`eval-learn run` from**, not relative to the config file and not relative to the package
+`eval-unlearn run` from**, not relative to the config file and not relative to the package
 installation.
 
 ```bash
 # Running from your project root:
-eval-learn run --config configs/mace_nudity.json
+eval-unlearn run --config configs/mace_nudity.json
 # → "data/my_prompts.csv" resolves to <your project root>/data/my_prompts.csv
 ```
 
@@ -160,7 +160,7 @@ a header row and pass it as `seed_prompts_csv` with `enable_discovery=false`.
     Missing this package raises an `ImportError` at metric initialisation.
 
 !!! warning "Requires NudeNet for nudity"
-    When `concept_name="nudity"` (or `detector="nudenet"`), requires `pip install eval-learn[asr]`.
+    When `concept_name="nudity"` (or `detector="nudenet"`), requires `pip install eval-unlearn[asr]`.
 
 !!! warning "Requires transformers for CLIP-based detection"
     When CLIP is the active detector, requires `pip install transformers`.
@@ -193,7 +193,7 @@ a header row and pass it as `seed_prompts_csv` with `enable_discovery=false`.
 
 !!! warning "All paths are relative to your working directory"
     `seed_prompts_csv`, `concept_vector_path`, and `generated_prompts_output` are all
-    resolved relative to the directory where you run `eval-learn run`, not relative to
+    resolved relative to the directory where you run `eval-unlearn run`, not relative to
     the config file or the package installation. Use absolute paths if you need configs
     that work regardless of where you invoke the command.
 

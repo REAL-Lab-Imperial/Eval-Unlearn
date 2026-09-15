@@ -3,9 +3,9 @@
 from unittest.mock import Mock, patch, MagicMock
 import pytest
 
-from eval_learn.metrics.clip_score.metric import CLIPScoreMetric
-from eval_learn.metrics.clip_score.config import CLIPScoreConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.clip_score.metric import CLIPScoreMetric
+from eval_unlearn.metrics.clip_score.config import CLIPScoreConfig
+from eval_unlearn.types import MetricResult
 
 
 class TestCLIPScoreConfig:
@@ -40,9 +40,9 @@ class TestCLIPScoreConfig:
 
 def _make_clip_metric(**kwargs):
     """Helper: create CLIPScoreMetric with mocked CLIP model/processor."""
-    with patch("eval_learn.metrics.clip_score.metric.CLIPModel") as mock_model_cls, \
-         patch("eval_learn.metrics.clip_score.metric.CLIPProcessor") as mock_proc_cls, \
-         patch("eval_learn.metrics.clip_score.metric.torch") as mock_torch:
+    with patch("eval_unlearn.metrics.clip_score.metric.CLIPModel") as mock_model_cls, \
+         patch("eval_unlearn.metrics.clip_score.metric.CLIPProcessor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
         mock_torch.cuda.is_available.return_value = False
         mock_torch.no_grad = MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=None), __exit__=MagicMock(return_value=False)))
 
@@ -96,7 +96,7 @@ class TestCLIPScoreMetricUpdate:
         metric.processor = Mock(return_value=mock_inputs)
         metric.model = Mock(return_value=mock_outputs)
 
-        with patch("eval_learn.metrics.clip_score.metric.torch") as mock_torch:
+        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
             mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
             mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
 
@@ -140,7 +140,7 @@ class TestCLIPScoreMetricUpdate:
         metric.processor = Mock(return_value=mock_inputs)
         metric.model = Mock(side_effect=lambda **kw: make_outputs())
 
-        with patch("eval_learn.metrics.clip_score.metric.torch") as mock_torch:
+        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
             mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
             mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
 
@@ -259,7 +259,7 @@ class TestCLIPScoreMetricIntegration:
         metric.processor = Mock(return_value=mock_inputs)
         metric.model = Mock(side_effect=lambda **kw: make_outputs())
 
-        with patch("eval_learn.metrics.clip_score.metric.torch") as mock_torch:
+        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
             mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
             mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
 

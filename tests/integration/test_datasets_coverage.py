@@ -26,27 +26,27 @@ pytestmark = pytest.mark.integration
 class TestRegistryLocal:
 
     def test_get_technique_not_found_raises(self):
-        from eval_learn.registry.local import get_technique
+        from eval_unlearn.registry.local import get_technique
         with pytest.raises(ValueError, match="not found"):
             get_technique("__nonexistent_xyz__")
 
     def test_get_metric_not_found_raises(self):
-        from eval_learn.registry.local import get_metric
+        from eval_unlearn.registry.local import get_metric
         with pytest.raises(ValueError, match="not found"):
             get_metric("__nonexistent_xyz__")
 
     def test_get_dataset_not_found_raises(self):
-        from eval_learn.registry.local import get_dataset
+        from eval_unlearn.registry.local import get_dataset
         with pytest.raises(ValueError, match="not found"):
             get_dataset("__nonexistent_xyz__")
 
     def test_get_benchmark_not_found_raises(self):
-        from eval_learn.registry.local import get_benchmark
+        from eval_unlearn.registry.local import get_benchmark
         with pytest.raises(ValueError, match="not found"):
             get_benchmark("__nonexistent_xyz__")
 
     def test_get_technique_found(self):
-        from eval_learn.registry.local import _TECHNIQUES, get_technique
+        from eval_unlearn.registry.local import _TECHNIQUES, get_technique
         _TECHNIQUES["__test_tech__"] = object
         try:
             result = get_technique("__test_tech__")
@@ -55,7 +55,7 @@ class TestRegistryLocal:
             _TECHNIQUES.pop("__test_tech__", None)
 
     def test_get_metric_found(self):
-        from eval_learn.registry.local import _METRICS, get_metric
+        from eval_unlearn.registry.local import _METRICS, get_metric
         _METRICS["__test_metric__"] = object
         try:
             result = get_metric("__test_metric__")
@@ -64,7 +64,7 @@ class TestRegistryLocal:
             _METRICS.pop("__test_metric__", None)
 
     def test_register_dataset_decorator(self):
-        from eval_learn.registry.local import register_dataset, get_dataset
+        from eval_unlearn.registry.local import register_dataset, get_dataset
         @register_dataset("__test_ds__")
         def _my_loader():
             return "hello"
@@ -72,18 +72,18 @@ class TestRegistryLocal:
             fn = get_dataset("__test_ds__")
             assert fn() == "hello"
         finally:
-            from eval_learn.registry.local import _DATASETS
+            from eval_unlearn.registry.local import _DATASETS
             _DATASETS.pop("__test_ds__", None)
 
     def test_register_benchmark_decorator(self):
-        from eval_learn.registry.local import register_benchmark, get_benchmark
+        from eval_unlearn.registry.local import register_benchmark, get_benchmark
         @register_benchmark("__test_bm__")
         def _bm():
             pass
         try:
             get_benchmark("__test_bm__")
         finally:
-            from eval_learn.registry.local import _BENCHMARKS
+            from eval_unlearn.registry.local import _BENCHMARKS
             _BENCHMARKS.pop("__test_bm__", None)
 
 
@@ -91,17 +91,17 @@ class TestRegistryEntrypoints:
 
     def test_load_entrypoints_no_crash(self):
         """load_entrypoints should not raise even if no plugins are installed."""
-        from eval_learn.registry.entrypoints import load_entrypoints
+        from eval_unlearn.registry.entrypoints import load_entrypoints
         load_entrypoints()  # should not raise
 
     def test_load_entrypoints_logs_failed_plugin(self):
         """A broken entry point should be logged but not crash."""
-        from eval_learn.registry.entrypoints import load_entrypoints
+        from eval_unlearn.registry.entrypoints import load_entrypoints
         from importlib.metadata import EntryPoint
         bad_ep = MagicMock()
         bad_ep.name = "broken_plugin"
         bad_ep.load.side_effect = ImportError("missing dep")
-        with patch("eval_learn.registry.entrypoints.entry_points") as mock_eps:
+        with patch("eval_unlearn.registry.entrypoints.entry_points") as mock_eps:
             mock_eps.return_value = [bad_ep]
             load_entrypoints()  # should not raise despite bad entry point
 
@@ -113,22 +113,22 @@ class TestRegistryEntrypoints:
 class TestTechniqueBaseModels:
 
     def test_get_base_model_known(self):
-        from eval_learn.techniques._base_models import get_technique_base_model_id
+        from eval_unlearn.techniques._base_models import get_technique_base_model_id
         result = get_technique_base_model_id("ssd", {})
         assert result == "CompVis/stable-diffusion-v1-4"
 
     def test_get_base_model_free_run(self):
-        from eval_learn.techniques._base_models import get_technique_base_model_id
+        from eval_unlearn.techniques._base_models import get_technique_base_model_id
         result = get_technique_base_model_id("free_run", {"model_id": "org/my-model"})
         assert result == "org/my-model"
 
     def test_get_base_model_free_run_no_model_id(self):
-        from eval_learn.techniques._base_models import get_technique_base_model_id
+        from eval_unlearn.techniques._base_models import get_technique_base_model_id
         result = get_technique_base_model_id("free_run", {})
         assert result is None
 
     def test_get_base_model_unknown_returns_none(self):
-        from eval_learn.techniques._base_models import get_technique_base_model_id
+        from eval_unlearn.techniques._base_models import get_technique_base_model_id
         result = get_technique_base_model_id("unknown_tech_xyz", {})
         assert result is None
 
@@ -140,21 +140,21 @@ class TestTechniqueBaseModels:
 class TestMetricBaseModels:
 
     def test_metric_models_dict_has_expected_keys(self):
-        from eval_learn.metrics._base_models import METRIC_MODELS
+        from eval_unlearn.metrics._base_models import METRIC_MODELS
         assert "asr_i2p" in METRIC_MODELS
         assert "clip_score" in METRIC_MODELS
         assert "fid" in METRIC_MODELS
         assert "err" in METRIC_MODELS
 
     def test_metric_model_info_namedtuple(self):
-        from eval_learn.metrics._base_models import METRIC_MODELS
+        from eval_unlearn.metrics._base_models import METRIC_MODELS
         info = METRIC_MODELS["clip_score"]
         assert hasattr(info, "model")
         assert hasattr(info, "configurable")
         assert info.configurable is True
 
     def test_fid_not_configurable(self):
-        from eval_learn.metrics._base_models import METRIC_MODELS
+        from eval_unlearn.metrics._base_models import METRIC_MODELS
         assert METRIC_MODELS["fid"].configurable is False
 
 
@@ -176,8 +176,8 @@ class TestI2PDatasetLoader:
         rows = [{"prompt": "a prompt", "categories": "sexual,violence"}]
         mock_ds = self._make_mock_hf_ds(rows)
         mock_ds["prompt"] = ["a prompt"]
-        with patch("eval_learn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.i2p_csv import load_i2p_csv
+        with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.i2p_csv import load_i2p_csv
             loader = load_i2p_csv(limit=1)
         from torch.utils.data import DataLoader
         assert isinstance(loader, DataLoader)
@@ -186,15 +186,15 @@ class TestI2PDatasetLoader:
         rows = [{"prompt": "nude scene", "categories": "sexual"}]
         mock_ds = self._make_mock_hf_ds(rows)
         mock_ds["prompt"] = ["nude scene"]
-        with patch("eval_learn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.i2p_csv import load_i2p_csv
+        with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.i2p_csv import load_i2p_csv
             loader = load_i2p_csv(concept="nudity", limit=1)
         assert loader is not None
 
     def test_load_i2p_invalid_concept_raises(self):
-        from eval_learn.datasets.i2p_csv import load_i2p_csv
+        from eval_unlearn.datasets.i2p_csv import load_i2p_csv
         with pytest.raises(ValueError, match="No I2P category mapping"):
-            with patch("eval_learn.datasets.i2p_csv.hf_load_dataset"):
+            with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset"):
                 load_i2p_csv(concept="unknown_concept_xyz")
 
 
@@ -206,8 +206,8 @@ class TestTIFADatasetLoader:
         rows = [{"caption": "a cat", "qas": qa_data}]
         mock_ds = MagicMock()
         mock_ds.take.return_value = rows
-        with patch("eval_learn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.tifa_csv import load_tifa_csv
+        with patch("eval_unlearn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.tifa_csv import load_tifa_csv
             loader = load_tifa_csv(limit=1)
         from torch.utils.data import DataLoader
         assert isinstance(loader, DataLoader)
@@ -240,8 +240,8 @@ class TestERRCompositeDatasetLoader:
             call_count[0] += 1
             return [i2p_ds, ch_ds, rab_ds][idx]
 
-        with patch("eval_learn.datasets.err_composite.hf_load_dataset", side_effect=fake_load):
-            from eval_learn.datasets.err_composite import load_err_composite
+        with patch("eval_unlearn.datasets.err_composite.hf_load_dataset", side_effect=fake_load):
+            from eval_unlearn.datasets.err_composite import load_err_composite
             loader = load_err_composite(target_limit=1, retain_limit=1, adversarial_limit=1)
 
         from torch.utils.data import DataLoader
@@ -271,9 +271,9 @@ class TestCOCOParquetDatasetLoader:
         mock_resp.content = img_bytes.read()
         mock_resp.raise_for_status = MagicMock()
 
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get", return_value=mock_resp):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get", return_value=mock_resp):
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=1)
 
         from torch.utils.data import DataLoader
@@ -288,10 +288,10 @@ class TestCOCOParquetDatasetLoader:
         mock_ds = MagicMock()
         mock_ds.take.return_value = [row]
 
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get",
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get",
                    side_effect=Exception("connection refused")):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=1)
 
         batch = next(iter(loader))

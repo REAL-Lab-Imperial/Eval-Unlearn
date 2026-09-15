@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to eval-learn! The library is
+Thank you for your interest in contributing to eval-unlearn! The library is
 designed to be extensible: adding a new unlearning technique or a new evaluation
 metric requires writing only a small number of files and following a common
 interface.
@@ -18,7 +18,7 @@ tests your code must pass before a pull request can be merged.
 
     ```bash
     git clone <repo-url>
-    cd eval-learn-testing/Packages/eval-learn
+    cd eval-unlearn-testing/Packages/eval-unlearn
     pip install -e ".[dev]"
     ```
 
@@ -46,8 +46,8 @@ tests your code must pass before a pull request can be merged.
 
 ### Overview
 
-Each technique in eval-learn lives in its own sub-package under
-`src/eval_learn/techniques/` and exposes two artefacts:
+Each technique in eval-unlearn lives in its own sub-package under
+`src/eval_unlearn/techniques/` and exposes two artefacts:
 
 | File | Purpose |
 |---|---|
@@ -60,7 +60,7 @@ It must not contain training logic — that belongs in the technique package its
 ### Required files
 
 ```
-src/eval_learn/techniques/
+src/eval_unlearn/techniques/
 └── your_technique/
     ├── __init__.py
     ├── config.py
@@ -72,12 +72,12 @@ src/eval_learn/techniques/
 Add one entry to `pyproject.toml`:
 
 ```toml
-[project.entry-points."eval_learn.techniques"]
-your_technique = "eval_learn.techniques.your_technique.wrapper:YourTechniqueClass"
+[project.entry-points."eval_unlearn.techniques"]
+your_technique = "eval_unlearn.techniques.your_technique.wrapper:YourTechniqueClass"
 ```
 
 If your technique uses a fixed diffusion backbone, also add it to
-`src/eval_learn/techniques/_base_models.py`:
+`src/eval_unlearn/techniques/_base_models.py`:
 
 ```python
 TECHNIQUE_BASE_MODELS = {
@@ -122,7 +122,7 @@ The contribution notebook runs these tests automatically. All must pass:
 
 ### Overview
 
-Each metric lives under `src/eval_learn/metrics/` and implements a three-method
+Each metric lives under `src/eval_unlearn/metrics/` and implements a three-method
 streaming interface that the runners call in order:
 
 | Method | Called by runner | Purpose |
@@ -134,7 +134,7 @@ streaming interface that the runners call in order:
 ### Required files
 
 ```
-src/eval_learn/metrics/
+src/eval_unlearn/metrics/
 └── your_metric/
     ├── __init__.py
     ├── config.py
@@ -158,11 +158,11 @@ self._per_image_scores = []    # float or None per image
 Add one entry to `pyproject.toml`:
 
 ```toml
-[project.entry-points."eval_learn.metrics"]
-your_metric = "eval_learn.metrics.your_metric.metric:YourMetricClass"
+[project.entry-points."eval_unlearn.metrics"]
+your_metric = "eval_unlearn.metrics.your_metric.metric:YourMetricClass"
 ```
 
-Optionally document your model in `src/eval_learn/metrics/_base_models.py`:
+Optionally document your model in `src/eval_unlearn/metrics/_base_models.py`:
 
 ```python
 METRIC_MODELS = {

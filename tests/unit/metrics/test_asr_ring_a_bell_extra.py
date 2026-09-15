@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch, mock_open
 from PIL import Image
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image():
@@ -16,12 +16,12 @@ def _make_rab_metric(detector="nudenet", enable_discovery=False, concept="nudity
     mock_clip = MagicMock()
     mock_proc = MagicMock()
 
-    with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier", MagicMock()), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+    with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mock_cls, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
          patch("os.path.exists", return_value=True), \
          patch("numpy.load", return_value=__import__("numpy").zeros((77, 768))):
         mock_cls.from_pretrained.return_value = mock_clip
@@ -38,7 +38,7 @@ def _make_rab_metric(detector="nudenet", enable_discovery=False, concept="nudity
             kwargs["generated_prompts_output"] = "/fake/out.csv"
             kwargs["concept_vector_path"] = "/fake/vec.npy"
 
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
         metric = ASRRingABellMetric(**kwargs)
 
     return metric
@@ -49,24 +49,24 @@ def _make_rab_metric(detector="nudenet", enable_discovery=False, concept="nudity
 # ---------------------------------------------------------------------------
 class TestRingABellConfigValidation:
     def test_discovery_without_seed_csv_raises(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             with pytest.raises(ValueError, match="seed_prompts_csv"):
                 ASRRingABellMetric(concept_name="nudity", enable_discovery=True)
 
     def test_discovery_without_output_raises(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
              patch("os.path.exists", return_value=True), \
              patch("numpy.load", return_value=__import__("numpy").zeros((77, 768))):
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             with pytest.raises(ValueError, match="generated_prompts_output"):
                 ASRRingABellMetric(
                     concept_name="nudity",
@@ -76,23 +76,23 @@ class TestRingABellConfigValidation:
                 )
 
     def test_no_discovery_without_seed_raises(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             with pytest.raises(ValueError, match="seed_prompts_csv"):
                 ASRRingABellMetric(concept_name="nudity", enable_discovery=False)
 
     def test_non_nudity_without_vector_raises(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             with pytest.raises(ValueError, match="concept_vector_path is required"):
                 ASRRingABellMetric(
                     concept_name="violence",
@@ -159,16 +159,16 @@ class TestRingABellLoadDatasetSeedPath:
 # ---------------------------------------------------------------------------
 class TestRingABellUpdateQ16:
     def test_inappropriate_counted(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("inappropriate", 0.95)]
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             metric = ASRRingABellMetric(
                 concept_name="violence",
                 detector="q16",
@@ -179,16 +179,16 @@ class TestRingABellUpdateQ16:
         assert metric._unsafe_count == 1
 
     def test_q16_exception_handled(self):
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16_cls, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mock_q16_cls, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
             mock_q16 = MagicMock()
             mock_q16.classify_batch.side_effect = RuntimeError("OOM")
             mock_q16_cls.return_value = mock_q16
-            from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+            from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
             metric = ASRRingABellMetric(
                 concept_name="violence",
                 detector="q16",
@@ -294,13 +294,13 @@ import numpy as np
 # discovery + seed-load paths, nudenet file-path, Q16 update paths
 # ---------------------------------------------------------------------------
 def _make_rab_base(detector="nudenet", concept="nudity", **extra):
-    from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
-    with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier"), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-         patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+    from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+    with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier"), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
          patch("os.path.exists", return_value=True), \
          patch("numpy.load", return_value=np.zeros((77, 768))):
         m = MagicMock(); m.to.return_value = m
@@ -315,13 +315,13 @@ def _make_rab_base(detector="nudenet", concept="nudity", **extra):
 
 class TestRingABellAdditionalBranches:
     def test_q16_classifier_none_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier", None), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier", None), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()):
             m = MagicMock(); m.to.return_value = m
             mc.from_pretrained.return_value = m
             mp.from_pretrained.return_value = MagicMock()
@@ -332,14 +332,14 @@ class TestRingABellAdditionalBranches:
                 )
 
     def test_q16_unknown_clip_model_warns(self):
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mq, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.config.validate_clip_model"):
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.Q16Classifier") as mq, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.config.validate_clip_model"):
             m = MagicMock(); m.to.return_value = m
             mc.from_pretrained.return_value = m
             mp.from_pretrained.return_value = MagicMock()
@@ -351,12 +351,12 @@ class TestRingABellAdditionalBranches:
         assert metric.q16_classifier is not None
 
     def test_uses_bundled_nudity_vector(self):
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric, _BUNDLED_NUDITY_VECTOR
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric, _BUNDLED_NUDITY_VECTOR
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
              patch("os.path.exists", return_value=True), \
              patch("numpy.load", return_value=np.zeros((77, 768))):
             m = MagicMock(); m.to.return_value = m
@@ -370,12 +370,12 @@ class TestRingABellAdditionalBranches:
         assert str(_BUNDLED_NUDITY_VECTOR) in metric._concept_vector_path
 
     def test_embed_dim_mismatch_raises(self):
-        from eval_learn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
+        from eval_unlearn.metrics.asr_ring_a_bell.metric import ASRRingABellMetric
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.NudeDetector"), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPModel") as mc, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.CLIPProcessor") as mp, \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig", MagicMock()), \
              patch("os.path.exists", return_value=True), \
              patch("numpy.load", return_value=np.zeros((77, 512))):
             m = MagicMock(); m.to.return_value = m
@@ -412,9 +412,9 @@ class TestRingABellAdditionalBranches:
         })
         metric._concept_vector_path = "/fake/vec.npy"
         mock_disc = MagicMock()
-        with patch("eval_learn.metrics.asr_ring_a_bell.metric.PromptDiscovery",
+        with patch("eval_unlearn.metrics.asr_ring_a_bell.metric.PromptDiscovery",
                    return_value=mock_disc), \
-             patch("eval_learn.metrics.asr_ring_a_bell.metric.GAConfig",
+             patch("eval_unlearn.metrics.asr_ring_a_bell.metric.GAConfig",
                    return_value=MagicMock()), \
              patch("os.makedirs"):
             metric._run_discovery()

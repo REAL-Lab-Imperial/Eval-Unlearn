@@ -14,8 +14,8 @@ import json
 import torch
 from dotenv import load_dotenv
 
-from eval_learn.runners import MultiBenchmarkRunner
-from eval_learn.logging_utils import get_logger
+from eval_unlearn.runners import MultiBenchmarkRunner
+from eval_unlearn.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -60,19 +60,19 @@ def cleanup():
 def main():
     """Run all nudity unlearning technique benchmarks."""
     techniques = [
-        # (
-        #     "CoGFD — Concept Graph-based high-level Feature Decoupling",
-        #     "examples/nudity/cogfd.json",
-        # ),
-        # (
-        #     "SSD — Selective Synaptic Dampening",
-        #     "examples/nudity/ssd.json",
-        # ),
-        # (
-        #     "TraSCE — Training-free Stable Concept Editing",
-        #     "examples/nudity/trasce.json",
-        # ),
-        # ("CA — Concept Ablation", "examples/nudity/ca.json"),
+        (
+            "CoGFD — Concept Graph-based high-level Feature Decoupling",
+            "examples/nudity/cogfd.json",
+        ),
+        (
+            "SSD — Selective Synaptic Dampening",
+            "examples/nudity/ssd.json",
+        ),
+        (
+            "TraSCE — Training-free Stable Concept Editing",
+            "examples/nudity/trasce.json",
+        ),
+        ("CA — Concept Ablation", "examples/nudity/ca.json"),
         (
             "ConceptSteerers",
             "examples/nudity/concept_steerers.json",

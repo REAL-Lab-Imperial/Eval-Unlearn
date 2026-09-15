@@ -6,9 +6,9 @@ import pytest
 import torch
 from PIL import Image
 
-from eval_learn.metrics.ua_ira.metric import UAIRAMetric
-from eval_learn.metrics.ua_ira.config import UAIRAConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
+from eval_unlearn.metrics.ua_ira.config import UAIRAConfig
+from eval_unlearn.types import MetricResult
 
 # Dummy CSV paths used when the config requires non-empty paths.
 _DUMMY_TARGET = "/nonexistent/target.csv"
@@ -26,9 +26,9 @@ def _make_ua_ira_metric(**kwargs):
     kwargs.setdefault("target_prompts_path", _DUMMY_TARGET)
     kwargs.setdefault("retain_prompts_path", _DUMMY_RETAIN)
 
-    with patch("eval_learn.metrics.ua_ira.metric.CLIPModel") as mock_model_cls, \
-         patch("eval_learn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc_cls, \
-         patch("eval_learn.metrics.ua_ira.metric.torch") as mock_torch:
+    with patch("eval_unlearn.metrics.ua_ira.metric.CLIPModel") as mock_model_cls, \
+         patch("eval_unlearn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.ua_ira.metric.torch") as mock_torch:
         mock_torch.cuda.is_available.return_value = False
         mock_torch.no_grad = MagicMock(
             return_value=MagicMock(
@@ -152,7 +152,7 @@ class TestUAIRALoadDataset:
         metric._retain_total_count = 25
 
         # Mock the load function from the datasets module
-        with patch("eval_learn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=Mock()):
+        with patch("eval_unlearn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=Mock()):
             metric.load_dataset()
 
             assert metric._target_correct_count == 0
@@ -429,6 +429,6 @@ class TestUAIRAMetricIntegration:
 # ---------------------------------------------------------------------------
 class TestUAIRAConfigValidation:
     def test_missing_retain_prompts_path_raises(self):
-        from eval_learn.metrics.ua_ira.config import UAIRAConfig
+        from eval_unlearn.metrics.ua_ira.config import UAIRAConfig
         with pytest.raises(ValueError, match="retain_prompts_path"):
             UAIRAConfig(target_prompts_path="target.csv")

@@ -1,6 +1,6 @@
 # GPU Requirements
 
-Eval-Learn runs Stable Diffusion pipelines and, for training-based techniques, fine-tunes
+Eval-Unlearn runs Stable Diffusion pipelines and, for training-based techniques, fine-tunes
 or modifies model weights. Both phases require a CUDA GPU. This page documents the VRAM
 requirements for each technique and metric so you can plan your hardware accordingly.
 
@@ -124,7 +124,7 @@ If you encounter a CUDA OOM:
 
 **Run techniques sequentially, not concurrently:**
 
-- Never launch two eval-learn processes on the same GPU — each will try to load a
+- Never launch two eval-unlearn processes on the same GPU — each will try to load a
   full SD pipeline
 
 ---
@@ -139,7 +139,7 @@ for small prompt sets. fp16 is automatically disabled on CPU.
 
 ## Multi-GPU
 
-Eval-Learn does not support data-parallel or model-parallel multi-GPU training. Each
+Eval-Unlearn does not support data-parallel or model-parallel multi-GPU training. Each
 technique runs on a single device. On a multi-GPU machine, run one technique per GPU
 by submitting separate jobs with `device: cuda:0`, `device: cuda:1`, etc. in each config.
 

@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from torch.utils.data import DataLoader
 
-from eval_learn.types import Dataset
+from eval_unlearn.types import Dataset
 
 
 # ---------------------------------------------------------------------------
@@ -14,24 +14,24 @@ from eval_learn.types import Dataset
 # ---------------------------------------------------------------------------
 class TestLoadHFConfig:
     def test_loads_known_key(self):
-        from eval_learn.datasets.hf_stream import load_hf_config
+        from eval_unlearn.datasets.hf_stream import load_hf_config
         cfg = load_hf_config("i2p")
         assert "repo_id" in cfg
         assert "caption_col" in cfg
 
     def test_unknown_key_raises(self):
-        from eval_learn.datasets.hf_stream import load_hf_config
+        from eval_unlearn.datasets.hf_stream import load_hf_config
         with pytest.raises(KeyError, match="not found"):
             load_hf_config("nonexistent_dataset_xyz")
 
     def test_all_configured_datasets(self):
-        from eval_learn.datasets.hf_stream import load_hf_config
+        from eval_unlearn.datasets.hf_stream import load_hf_config
         for key in ("i2p", "tifa", "coco", "err_challenge", "ring_a_bell"):
             cfg = load_hf_config(key)
             assert cfg
 
     def test_missing_yaml_raises(self, tmp_path, monkeypatch):
-        from eval_learn.datasets import hf_stream
+        from eval_unlearn.datasets import hf_stream
         monkeypatch.setattr(
             hf_stream,
             "Path",
@@ -55,21 +55,21 @@ class TestLoadI2PCSV:
     def test_returns_dataloader(self):
         rows = [{"prompt": "a naked person", "categories": "sexual"}]
         mock_ds = self._make_hf_ds(rows)
-        with patch("eval_learn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.i2p_csv import load_i2p_csv
+        with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.i2p_csv import load_i2p_csv
             loader = load_i2p_csv(concept="nudity", limit=1)
         assert isinstance(loader, DataLoader)
 
     def test_invalid_concept_raises(self):
-        from eval_learn.datasets.i2p_csv import load_i2p_csv
+        from eval_unlearn.datasets.i2p_csv import load_i2p_csv
         with pytest.raises(ValueError, match="No I2P category mapping"):
             load_i2p_csv(concept="banana")
 
     def test_no_concept_loads_all(self):
         rows = [{"prompt": "general", "categories": "violence"}]
         mock_ds = self._make_hf_ds(rows)
-        with patch("eval_learn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.i2p_csv import load_i2p_csv
+        with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.i2p_csv import load_i2p_csv
             loader = load_i2p_csv(concept=None, limit=1)
         assert isinstance(loader, DataLoader)
         # filter should NOT be called when concept=None
@@ -78,8 +78,8 @@ class TestLoadI2PCSV:
     def test_collate_fn_produces_dataset(self):
         rows = [{"prompt": "a prompt", "categories": "sexual"}]
         mock_ds = self._make_hf_ds(rows)
-        with patch("eval_learn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.i2p_csv import load_i2p_csv
+        with patch("eval_unlearn.datasets.i2p_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.i2p_csv import load_i2p_csv
             loader = load_i2p_csv(concept="nudity", limit=1)
         batch = next(iter(loader))
         assert isinstance(batch, Dataset)
@@ -102,7 +102,7 @@ class TestLoadUAIRACSV:
         self._write_csv(target, [{"prompt": "nudity prompt"}])
         self._write_csv(retain, [{"prompt": "clothed person"}])
 
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         loader = load_ua_ira_csv(str(target), str(retain))
         batch = next(iter(loader))
         assert isinstance(batch, Dataset)
@@ -115,7 +115,7 @@ class TestLoadUAIRACSV:
         self._write_csv(target, [{"prompt": f"p{i}"} for i in range(10)])
         self._write_csv(retain, [{"prompt": "keep"}])
 
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         loader = load_ua_ira_csv(str(target), str(retain), target_limit=3)
         all_prompts = []
         for batch in loader:
@@ -126,14 +126,14 @@ class TestLoadUAIRACSV:
     def test_missing_target_file_raises(self, tmp_path):
         retain = tmp_path / "retain.csv"
         self._write_csv(retain, [{"prompt": "keep"}])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         with pytest.raises(FileNotFoundError, match="Target prompts file not found"):
             load_ua_ira_csv("/no/such/file.csv", str(retain))
 
     def test_missing_retain_file_raises(self, tmp_path):
         target = tmp_path / "target.csv"
         self._write_csv(target, [{"prompt": "erase me"}])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         with pytest.raises(FileNotFoundError, match="Retain prompts file not found"):
             load_ua_ira_csv(str(target), "/no/such/file.csv")
 
@@ -142,7 +142,7 @@ class TestLoadUAIRACSV:
         retain = tmp_path / "retain.csv"
         self._write_csv(target, [])
         self._write_csv(retain, [])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         with pytest.raises(ValueError, match="No prompts loaded"):
             load_ua_ira_csv(str(target), str(retain))
 
@@ -151,7 +151,7 @@ class TestLoadUAIRACSV:
         retain = tmp_path / "retain.csv"
         self._write_csv(target, [{"prompt": "nude"}])
         self._write_csv(retain, [{"prompt": "clothed"}])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         loader = load_ua_ira_csv(str(target), str(retain), batch_size=10)
         batch = next(iter(loader))
         assert "target" in batch.metadata["categories"]
@@ -173,8 +173,8 @@ class TestLoadTIFACSV:
         mock_ds.take.return_value = iter(rows)
         mock_ds.__iter__ = lambda self: iter(rows)
 
-        with patch("eval_learn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.tifa_csv import load_tifa_csv
+        with patch("eval_unlearn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.tifa_csv import load_tifa_csv
             loader = load_tifa_csv(limit=1)
         assert isinstance(loader, DataLoader)
 
@@ -185,8 +185,8 @@ class TestLoadTIFACSV:
         mock_ds.take.return_value = iter(rows)
         mock_ds.__iter__ = lambda self: iter(rows)
 
-        with patch("eval_learn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
-            from eval_learn.datasets.tifa_csv import load_tifa_csv
+        with patch("eval_unlearn.datasets.tifa_csv.hf_load_dataset", return_value=mock_ds):
+            from eval_unlearn.datasets.tifa_csv import load_tifa_csv
             loader = load_tifa_csv(limit=1)
         batch = next(iter(loader))
         assert "qa_pairs" in batch.metadata
@@ -219,13 +219,13 @@ class TestLoadERRComposite:
             else:
                 return self._mock_hf_dataset([rab_row])
 
-        with patch("eval_learn.datasets.err_composite.hf_load_dataset", side_effect=fake_load):
-            from eval_learn.datasets.err_composite import load_err_composite
+        with patch("eval_unlearn.datasets.err_composite.hf_load_dataset", side_effect=fake_load):
+            from eval_unlearn.datasets.err_composite import load_err_composite
             loader = load_err_composite(target_limit=1, retain_limit=1, adversarial_limit=1)
         assert isinstance(loader, DataLoader)
 
     def test_composite_iterable_yields_all_categories(self):
-        from eval_learn.datasets.err_composite import _ERRCompositeIterableDataset
+        from eval_unlearn.datasets.err_composite import _ERRCompositeIterableDataset
 
         i2p_rows = [{"prompt": "nude", "categories": "sexual"}]
         ch_rows = [{"direct_prompt": "dog", "concept_name": "dog"}]
@@ -269,9 +269,9 @@ class TestLoadCOCOParquet:
         mock_ds.take.return_value = iter(rows)
         mock_ds.__iter__ = lambda self: iter(rows)
 
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get", return_value=fake_response):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get", return_value=fake_response):
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=1)
         assert isinstance(loader, DataLoader)
 
@@ -282,9 +282,9 @@ class TestLoadCOCOParquet:
         mock_ds.take.return_value = iter(rows)
         mock_ds.__iter__ = lambda self: iter(rows)
 
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get", side_effect=Exception("timeout")):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get", side_effect=Exception("timeout")):
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=1)
         batch = next(iter(loader))
         assert batch.prompts == []
@@ -309,10 +309,10 @@ class TestCOCOParquetCoverageGaps:
         rows = [{"captions": ["first", "second"], "coco_url": "http://fake/img.jpg"}]
         mock_ds = MagicMock()
         mock_ds.take.return_value = iter(rows)
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get",
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get",
                    return_value=self._fake_response()):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=1)
             batch = next(iter(loader))       # must iterate inside patch context
         assert batch.prompts == ["first"]
@@ -322,10 +322,10 @@ class TestCOCOParquetCoverageGaps:
         rows = [{"captions": "a dog", "coco_url": "http://fake/img.jpg"}]
         mock_ds = MagicMock()
         mock_ds.__iter__ = lambda self: iter(rows)
-        with patch("eval_learn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
-             patch("eval_learn.datasets.coco_parquet.requests.get",
+        with patch("eval_unlearn.datasets.coco_parquet.hf_load_dataset", return_value=mock_ds), \
+             patch("eval_unlearn.datasets.coco_parquet.requests.get",
                    return_value=self._fake_response()):
-            from eval_learn.datasets.coco_parquet import load_coco_parquet
+            from eval_unlearn.datasets.coco_parquet import load_coco_parquet
             loader = load_coco_parquet(limit=None)
         assert isinstance(loader, DataLoader)
 
@@ -361,11 +361,11 @@ class TestERRCompositeCoverageGaps:
             ds.__iter__ = lambda s: iter(rows_by_call[idx])
             return ds
 
-        with patch("eval_learn.datasets.err_composite.load_hf_config",
+        with patch("eval_unlearn.datasets.err_composite.load_hf_config",
                    side_effect=lambda k: cfg[k]), \
-             patch("eval_learn.datasets.err_composite.hf_load_dataset",
+             patch("eval_unlearn.datasets.err_composite.hf_load_dataset",
                    side_effect=fake_load):
-            from eval_learn.datasets.err_composite import load_err_composite
+            from eval_unlearn.datasets.err_composite import load_err_composite
             loader = load_err_composite(target_limit=1, retain_limit=1, adversarial_limit=1)
         assert isinstance(loader, DataLoader)
 
@@ -394,14 +394,14 @@ class TestERRCompositeCoverageGaps:
             ds.filter.return_value = iter(rows)
             return ds
 
-        with patch("eval_learn.datasets.err_composite.load_hf_config",
+        with patch("eval_unlearn.datasets.err_composite.load_hf_config",
                    side_effect=lambda k: cfg[k]), \
-             patch("eval_learn.datasets.err_composite.hf_load_dataset",
+             patch("eval_unlearn.datasets.err_composite.hf_load_dataset",
                    side_effect=fake_load):
-            from eval_learn.datasets.err_composite import load_err_composite
+            from eval_unlearn.datasets.err_composite import load_err_composite
             loader = load_err_composite(target_limit=1, retain_limit=1, adversarial_limit=1)
         # Iterating triggers collate_fn, covering lines 181-182
-        from eval_learn.types import Dataset as _Dataset
+        from eval_unlearn.types import Dataset as _Dataset
         batch = next(iter(loader))
         assert isinstance(batch, _Dataset)
 
@@ -421,7 +421,7 @@ class TestUAIRACSVCoverageGaps:
         retain = str(tmp_path / "retain.csv")
         self._write(target, "text", ["erase me"])
         self._write(retain, "text", ["keep me"])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         batch = next(iter(load_ua_ira_csv(target, retain)))
         assert len(batch.prompts) > 0
 
@@ -430,7 +430,7 @@ class TestUAIRACSVCoverageGaps:
         retain = str(tmp_path / "retain.csv")
         self._write(target, "prompt", ["nudity"])
         self._write(retain, "prompt", ["keep"])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         orig = open
         call_count = [0]
 
@@ -450,7 +450,7 @@ class TestUAIRACSVCoverageGaps:
         self._write(target, "prompt", ["nudity"])
         with open(retain, "wb") as f:
             f.write(b"prompt\n\xff\xfe bad utf8\n")
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         with pytest.raises(Exception):
             load_ua_ira_csv(target, retain)
 
@@ -459,7 +459,7 @@ class TestUAIRACSVCoverageGaps:
         retain = str(tmp_path / "retain.csv")
         self._write(target, "prompt", ["nudity"])
         self._write(retain, "prompt", ["keep"])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         orig = open
         def patched_open(p, *a, **kw):
             if str(p) == target:
@@ -474,7 +474,7 @@ class TestUAIRACSVCoverageGaps:
         retain = str(tmp_path / "retain.csv")
         self._write(target, "prompt", ["nudity"])
         self._write(retain, "prompt", ["keep1", "keep2", "keep3"])
-        from eval_learn.datasets.ua_ira_csv import load_ua_ira_csv
+        from eval_unlearn.datasets.ua_ira_csv import load_ua_ira_csv
         loader = load_ua_ira_csv(target, retain, retain_limit=1)
         batches = list(loader)
         retain_items = [p for b in batches for p, cat in zip(b.prompts, b.metadata["categories"]) if cat == "retain"]

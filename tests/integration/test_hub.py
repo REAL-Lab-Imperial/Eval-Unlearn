@@ -12,10 +12,10 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def sync():
-    with patch("eval_learn.hub.HfApi") as mock_api_cls:
+    with patch("eval_unlearn.hub.HfApi") as mock_api_cls:
         mock_api = MagicMock()
         mock_api_cls.return_value = mock_api
-        from eval_learn.hub import HFSync
+        from eval_unlearn.hub import HFSync
         s = HFSync(repo_id="org/test-repo", token="fake_token")
         s._mock_api = mock_api
         yield s
@@ -49,11 +49,11 @@ class TestHFSyncPush:
             sync.push_file(str(tmp_path / "no_file.json"), "path/file.json")
 
     def test_push_with_create_pr(self, tmp_path):
-        with patch("eval_learn.hub.HfApi") as mock_api_cls:
+        with patch("eval_unlearn.hub.HfApi") as mock_api_cls:
             mock_api = MagicMock()
             mock_api_cls.return_value = mock_api
             mock_api.upload_folder.return_value = "https://hf.co/pr/1"
-            from eval_learn.hub import HFSync
+            from eval_unlearn.hub import HFSync
             s = HFSync(repo_id="org/repo", create_pr=True)
             local = tmp_path / "run"
             local.mkdir()
@@ -66,21 +66,21 @@ class TestHFSyncPush:
 class TestHFSyncPull:
 
     def test_pull_folder(self, sync, tmp_path):
-        with patch("eval_learn.hub.snapshot_download") as mock_dl:
+        with patch("eval_unlearn.hub.snapshot_download") as mock_dl:
             mock_dl.return_value = str(tmp_path)
             path = sync.pull_folder("experiments", str(tmp_path / "local"))
         mock_dl.assert_called_once()
         assert path == str(tmp_path)
 
     def test_pull_all(self, sync, tmp_path):
-        with patch("eval_learn.hub.snapshot_download") as mock_dl:
+        with patch("eval_unlearn.hub.snapshot_download") as mock_dl:
             mock_dl.return_value = str(tmp_path)
             path = sync.pull_all(str(tmp_path / "all"))
         mock_dl.assert_called_once()
         assert path == str(tmp_path)
 
     def test_pull_folder_passes_allow_patterns(self, sync, tmp_path):
-        with patch("eval_learn.hub.snapshot_download") as mock_dl:
+        with patch("eval_unlearn.hub.snapshot_download") as mock_dl:
             mock_dl.return_value = str(tmp_path)
             sync.pull_folder("my/path", str(tmp_path))
         call_kwargs = mock_dl.call_args[1]
@@ -88,12 +88,12 @@ class TestHFSyncPull:
         assert "my/path" in call_kwargs["allow_patterns"]
 
     def test_token_from_env(self, tmp_path):
-        with patch("eval_learn.hub.HfApi") as mock_api_cls, \
+        with patch("eval_unlearn.hub.HfApi") as mock_api_cls, \
              patch.dict("os.environ", {"HF_TOKEN": "env_token"}):
             mock_api_cls.return_value = MagicMock()
-            from eval_learn.hub import HFSync
+            from eval_unlearn.hub import HFSync
             import importlib
-            import eval_learn.hub
-            importlib.reload(eval_learn.hub)
-            s = eval_learn.hub.HFSync(repo_id="org/repo")
+            import eval_unlearn.hub
+            importlib.reload(eval_unlearn.hub)
+            s = eval_unlearn.hub.HFSync(repo_id="org/repo")
         assert s.token == "env_token"

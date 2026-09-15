@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 import torch
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -26,14 +26,14 @@ def _make_ua_ira_metric(tmp_path=None, **kwargs):
         kwargs["target_prompts_path"] = tp
         kwargs["retain_prompts_path"] = rp
 
-    with patch("eval_learn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
-         patch("eval_learn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc_cls:
+    with patch("eval_unlearn.metrics.ua_ira.metric.CLIPModel") as mock_cls, \
+         patch("eval_unlearn.metrics.ua_ira.metric.CLIPProcessor") as mock_proc_cls:
         mock_model = MagicMock()
         mock_cls.from_pretrained.return_value = mock_model
         mock_model.to.return_value = mock_model
         mock_model.eval.return_value = mock_model
         mock_proc_cls.from_pretrained.return_value = MagicMock()
-        from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+        from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
         metric = UAIRAMetric(**kwargs)
     return metric
 
@@ -59,7 +59,7 @@ class TestUAIRALoadDataset:
         metric._retain_total_count = 8
 
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=mock_loader):
             metric.load_dataset()
 
         # Counters should be reset
@@ -69,7 +69,7 @@ class TestUAIRALoadDataset:
 
     def test_load_dataset_missing_paths_raises_directly(self):
         """The config validation catches missing paths before creating the metric."""
-        from eval_learn.metrics.ua_ira.config import UAIRAConfig
+        from eval_unlearn.metrics.ua_ira.config import UAIRAConfig
         with pytest.raises(ValueError, match="target_prompts_path must be set"):
             UAIRAConfig(target_prompts_path="", retain_prompts_path="some/path")
 
@@ -85,7 +85,7 @@ class TestUAIRALoadDataset:
             retain_prompts_path=str(rp),
         )
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=mock_loader) as mock_fn:
+        with patch("eval_unlearn.datasets.ua_ira_csv.load_ua_ira_csv", return_value=mock_loader) as mock_fn:
             result = metric.load_dataset()
 
         assert result is mock_loader
@@ -171,25 +171,25 @@ class TestUAIRAUpdate:
         # pil_images will be filtered to empty, so nothing evaluated
 
     def test_to_pil_with_pil_image(self):
-        from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+        from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
         img = _dummy_image()
         result = UAIRAMetric._to_pil(img)
         assert result is img
 
     def test_to_pil_with_valid_path(self, tmp_path):
-        from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+        from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
         p = tmp_path / "img.png"
         _dummy_image().save(str(p))
         result = UAIRAMetric._to_pil(str(p))
         assert isinstance(result, Image.Image)
 
     def test_to_pil_with_missing_path(self):
-        from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+        from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
         result = UAIRAMetric._to_pil("/nonexistent/path.png")
         assert result is None
 
     def test_to_pil_with_invalid_type(self):
-        from eval_learn.metrics.ua_ira.metric import UAIRAMetric
+        from eval_unlearn.metrics.ua_ira.metric import UAIRAMetric
         result = UAIRAMetric._to_pil(42)
         assert result is None
 
@@ -247,7 +247,7 @@ class TestUAIRACompute:
 # ---------------------------------------------------------------------------
 class TestUAIRACoverageGaps:
     def test_config_missing_target_path_raises(self):
-        from eval_learn.metrics.ua_ira.config import UAIRAConfig
+        from eval_unlearn.metrics.ua_ira.config import UAIRAConfig
         with pytest.raises(ValueError, match="target_prompts_path"):
             UAIRAConfig.from_dict({"retain_prompts_path": "/some/retain.csv"})
 

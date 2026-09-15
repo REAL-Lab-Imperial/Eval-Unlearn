@@ -8,7 +8,7 @@ from unittest.mock import patch
 # ---------------------------------------------------------------------------
 class TestESDConfig:
     def _make(self):
-        from eval_learn.techniques.esd.config import ESDConfig
+        from eval_unlearn.techniques.esd.config import ESDConfig
         return ESDConfig
 
     def test_defaults(self):
@@ -32,7 +32,7 @@ class TestESDConfig:
             self._make()(erase_concept="")
 
     def test_all_valid_train_methods(self):
-        from eval_learn.techniques.esd.config import TRAIN_METHODS
+        from eval_unlearn.techniques.esd.config import TRAIN_METHODS
         for m in TRAIN_METHODS:
             cfg = self._make()(erase_concept="nudity", train_method=m)
             assert cfg.train_method == m
@@ -48,7 +48,7 @@ class TestESDConfig:
 # ---------------------------------------------------------------------------
 class TestSSDConfig:
     def _make(self):
-        from eval_learn.techniques.ssd.config import SSDConfig
+        from eval_unlearn.techniques.ssd.config import SSDConfig
         return SSDConfig
 
     def test_defaults(self):
@@ -99,7 +99,7 @@ class TestSSDConfig:
 # ---------------------------------------------------------------------------
 class TestCAConfig:
     def _make(self):
-        from eval_learn.techniques.ca.config import CAConfig
+        from eval_unlearn.techniques.ca.config import CAConfig
         return CAConfig
 
     def test_defaults(self):
@@ -129,7 +129,7 @@ class TestCAConfig:
 # ---------------------------------------------------------------------------
 class TestCoGFDConfig:
     def _make(self):
-        from eval_learn.techniques.cogfd.config import CoGFDConfig
+        from eval_unlearn.techniques.cogfd.config import CoGFDConfig
         return CoGFDConfig
 
     def test_defaults(self):
@@ -177,7 +177,7 @@ class TestCoGFDConfig:
 # ---------------------------------------------------------------------------
 class TestTraSCEConfig:
     def _make(self):
-        from eval_learn.techniques.trasce.config import TraSCEConfig
+        from eval_unlearn.techniques.trasce.config import TraSCEConfig
         return TraSCEConfig
 
     def test_defaults(self):
@@ -208,7 +208,7 @@ class TestTraSCEConfig:
 # ---------------------------------------------------------------------------
 class TestAdvUnlearnConfig:
     def _make(self):
-        from eval_learn.techniques.advunlearn.config import AdvUnlearnConfig
+        from eval_unlearn.techniques.advunlearn.config import AdvUnlearnConfig
         return AdvUnlearnConfig
 
     def test_defaults(self):
@@ -261,7 +261,7 @@ class TestAdvUnlearnConfig:
             self._make().from_dict({"erase_concept": ""})
 
     def test_all_valid_enum_values(self):
-        from eval_learn.techniques.advunlearn.config import (
+        from eval_unlearn.techniques.advunlearn.config import (
             TRAIN_METHODS, ATTACK_METHODS, ATTACK_TYPES, COMPONENTS, RETAIN_DATASETS, RETAIN_TRAIN_METHODS
         )
         cfg = self._make().from_dict({
@@ -281,7 +281,7 @@ class TestAdvUnlearnConfig:
 # ---------------------------------------------------------------------------
 class TestSAFREEConfig:
     def _make(self):
-        from eval_learn.techniques.SAFREE.config import SAFREEConfig
+        from eval_unlearn.techniques.SAFREE.config import SAFREEConfig
         return SAFREEConfig
 
     def test_defaults_nudity(self):
@@ -318,7 +318,7 @@ class TestSAFREEConfig:
 # ---------------------------------------------------------------------------
 class TestMACEConfig:
     def _make(self):
-        from eval_learn.techniques.mace.config import MACEConfig
+        from eval_unlearn.techniques.mace.config import MACEConfig
         return MACEConfig
 
     def test_defaults(self):
@@ -344,7 +344,7 @@ class TestMACEConfig:
 # ---------------------------------------------------------------------------
 class TestSAeUronConfig:
     def _make(self):
-        from eval_learn.techniques.saeuron.config import SAeUronConfig
+        from eval_unlearn.techniques.saeuron.config import SAeUronConfig
         return SAeUronConfig
 
     def test_defaults(self):
@@ -386,7 +386,7 @@ class TestSAeUronConfig:
 # ---------------------------------------------------------------------------
 class TestSLDConfig:
     def _make(self):
-        from eval_learn.techniques.sld.config import SLDConfig
+        from eval_unlearn.techniques.sld.config import SLDConfig
         return SLDConfig
 
     def test_defaults(self):
@@ -428,7 +428,7 @@ class TestSLDConfig:
         assert cfg.sld_guidance_scale == 999
 
     def test_all_valid_concepts(self):
-        from eval_learn.techniques.sld.config import _VALID_ERASE_CONCEPTS
+        from eval_unlearn.techniques.sld.config import _VALID_ERASE_CONCEPTS
         for concept in _VALID_ERASE_CONCEPTS:
             cfg = self._make().from_dict({"erase_concept": concept})
             assert cfg.erase_concept == concept
@@ -439,7 +439,7 @@ class TestSLDConfig:
 # ---------------------------------------------------------------------------
 class TestUCEConfig:
     def _make(self):
-        from eval_learn.techniques.uce.config import UCEConfig
+        from eval_unlearn.techniques.uce.config import UCEConfig
         return UCEConfig
 
     def test_preset_nudity(self):
@@ -480,7 +480,7 @@ class TestUCEConfig:
 # ---------------------------------------------------------------------------
 class TestFreeRunConfig:
     def _make(self):
-        from eval_learn.techniques.free_run.config import FreeRunConfig
+        from eval_unlearn.techniques.free_run.config import FreeRunConfig
         return FreeRunConfig
 
     def test_valid(self):
@@ -501,7 +501,7 @@ class TestFreeRunConfig:
 # ---------------------------------------------------------------------------
 class TestConceptSteerersConfig:
     def _make(self):
-        from eval_learn.techniques.concept_steerers.config import ConceptSteerersConfig
+        from eval_unlearn.techniques.concept_steerers.config import ConceptSteerersConfig
         return ConceptSteerersConfig
 
     def test_defaults(self):
@@ -540,7 +540,7 @@ class TestConceptSteerersConfig:
 # ---------------------------------------------------------------------------
 class TestAdvUnlearnConfigValidation:
     def _cfg(self, **ov):
-        from eval_learn.techniques.advunlearn.config import AdvUnlearnConfig
+        from eval_unlearn.techniques.advunlearn.config import AdvUnlearnConfig
         base = dict(erase_concept="nudity", train_steps=10, attack_step=3,
                     retain_batch=4, retain_step=2, adv_prompt_num=4,
                     learning_rate=1e-5, attack_lr=1e-4, warmup_iter=5)
@@ -581,7 +581,7 @@ class TestAdvUnlearnConfigValidation:
 # ---------------------------------------------------------------------------
 class TestSAeUronConfigDevice:
     def test_device_cpu_when_no_gpu(self):
-        from eval_learn.techniques.saeuron.config import SAeUronConfig
+        from eval_unlearn.techniques.saeuron.config import SAeUronConfig
         with patch("torch.cuda.is_available", return_value=False), \
              patch("torch.backends.mps.is_available", return_value=False):
             cfg = SAeUronConfig.from_dict({"erase_concept": "nudity"})

@@ -28,7 +28,7 @@ is what benchmarking measures.
 
 A technique is an algorithm that takes a base diffusion model and returns a modified
 version. The modification can be a weight update (fine-tuning), a weight mask, an
-inference-time intervention, or a combination. Eval-Learn supports:
+inference-time intervention, or a combination. Eval-Unlearn supports:
 
 | Technique | Approach |
 |-----------|----------|
@@ -86,13 +86,13 @@ hyperparameters. It is the unit of a benchmark run. See
 
 Each technique starts from a pretrained Stable Diffusion checkpoint. The base model
 is fixed per technique — not all techniques support all checkpoints. Run
-`eval-learn models` to see which base model each installed technique uses.
+`eval-unlearn models` to see which base model each installed technique uses.
 
 ---
 
 ## What a run produces
 
-When you run a benchmark, Eval-Learn:
+When you run a benchmark, Eval-Unlearn:
 
 1. Loads the technique and applies it to the base model
 2. Generates images from the (now unlearned) model using the metric's prompt dataset

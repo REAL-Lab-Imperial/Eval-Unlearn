@@ -1,11 +1,11 @@
 # CLI Reference
 
-Eval-Learn provides a command-line interface for running benchmarks, managing results on
+Eval-Unlearn provides a command-line interface for running benchmarks, managing results on
 Hugging Face Hub, and inspecting installed plugins.
 
 ```
-eval-learn <command> [options]
-eval-learn --version
+eval-unlearn <command> [options]
+eval-unlearn --version
 ```
 
 ---
@@ -17,8 +17,8 @@ eval-learn --version
 Run a benchmark defined in a config file.
 
 ```bash
-eval-learn run --config config.yaml
-eval-learn run --config config.json
+eval-unlearn run --config config.yaml
+eval-unlearn run --config config.json
 ```
 
 The runner type is determined automatically from the config:
@@ -41,13 +41,13 @@ Results are written to `output_dir` as defined in the config.
 
 ```bash
 # Basic run
-eval-learn run --config examples/demo_configs/esd_nudity_multi.json
+eval-unlearn run --config examples/demo_configs/esd_nudity_multi.json
 
 # Run and push results to HF Hub
-eval-learn run --config config.yaml --hf-repo my-org/eval-results
+eval-unlearn run --config config.yaml --hf-repo my-org/eval-results
 
 # Run and open a PR instead of committing directly
-eval-learn run --config config.yaml --hf-repo my-org/eval-results --create-pr
+eval-unlearn run --config config.yaml --hf-repo my-org/eval-results --create-pr
 ```
 
 ---
@@ -57,7 +57,7 @@ eval-learn run --config config.yaml --hf-repo my-org/eval-results --create-pr
 Push a local results directory to a Hugging Face Hub dataset repo.
 
 ```bash
-eval-learn push --repo REPO_ID --local-dir PATH
+eval-unlearn push --repo REPO_ID --local-dir PATH
 ```
 
 **Options:**
@@ -72,7 +72,7 @@ eval-learn push --repo REPO_ID --local-dir PATH
 **Example:**
 
 ```bash
-eval-learn push --repo my-org/eval-results --local-dir results/esd_nudity_multi
+eval-unlearn push --repo my-org/eval-results --local-dir results/esd_nudity_multi
 ```
 
 ---
@@ -82,8 +82,8 @@ eval-learn push --repo my-org/eval-results --local-dir results/esd_nudity_multi
 Pull artifacts from a Hugging Face Hub dataset repo.
 
 ```bash
-eval-learn pull --repo REPO_ID
-eval-learn pull --repo REPO_ID --remote-path esd_nudity_multi
+eval-unlearn pull --repo REPO_ID
+eval-unlearn pull --repo REPO_ID --remote-path esd_nudity_multi
 ```
 
 **Options:**
@@ -98,10 +98,10 @@ eval-learn pull --repo REPO_ID --remote-path esd_nudity_multi
 
 ```bash
 # Pull a specific run
-eval-learn pull --repo my-org/eval-results --remote-path esd_nudity_multi
+eval-unlearn pull --repo my-org/eval-results --remote-path esd_nudity_multi
 
 # Pull everything
-eval-learn pull --repo my-org/eval-results --local-dir my-results/
+eval-unlearn pull --repo my-org/eval-results --local-dir my-results/
 ```
 
 ---
@@ -111,7 +111,7 @@ eval-learn pull --repo my-org/eval-results --local-dir my-results/
 Print all installed techniques, metrics, and datasets.
 
 ```bash
-eval-learn plugins
+eval-unlearn plugins
 ```
 
 Output example:
@@ -161,7 +161,7 @@ discovered via entry points.
 Print the base Stable Diffusion model and evaluation models used by each technique and metric.
 
 ```bash
-eval-learn models
+eval-unlearn models
 ```
 
 Output example:
@@ -243,7 +243,7 @@ root with your token:
 HF_TOKEN=your_token_here
 ```
 
-Eval-Learn loads this automatically on startup via `python-dotenv`. Alternatively, export
+Eval-Unlearn loads this automatically on startup via `python-dotenv`. Alternatively, export
 it in your shell:
 
 ```bash

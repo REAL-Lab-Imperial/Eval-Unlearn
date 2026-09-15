@@ -18,7 +18,7 @@ def _blank(color=(100, 150, 200)):
 
 @pytest.fixture
 def writer(tmp_path):
-    from eval_learn.artifacts.writer import ArtifactWriter
+    from eval_unlearn.artifacts.writer import ArtifactWriter
     return ArtifactWriter(base_dir=str(tmp_path))
 
 
@@ -228,19 +228,19 @@ class TestSyncToFinalReports:
 class TestSaveImage:
 
     def test_saves_valid_pil_image(self, tmp_path):
-        from eval_learn.artifacts.writer import ArtifactWriter
+        from eval_unlearn.artifacts.writer import ArtifactWriter
         path = str(tmp_path / "test_save.png")
         result = ArtifactWriter._save_image(_blank(), path, 0)
         assert result == path
         assert os.path.exists(path)
 
     def test_non_saveable_object_returns_none(self, tmp_path):
-        from eval_learn.artifacts.writer import ArtifactWriter
+        from eval_unlearn.artifacts.writer import ArtifactWriter
         result = ArtifactWriter._save_image("not_an_image", str(tmp_path / "x.png"), 0)
         assert result is None
 
     def test_failed_save_returns_none(self, tmp_path):
-        from eval_learn.artifacts.writer import ArtifactWriter
+        from eval_unlearn.artifacts.writer import ArtifactWriter
         from unittest.mock import MagicMock
         bad_img = MagicMock()
         bad_img.save.side_effect = IOError("disk full")

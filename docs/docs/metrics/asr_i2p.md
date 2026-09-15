@@ -67,7 +67,7 @@ match the technique's `erase_concept` (or `preset` for UCE).
 ## Warnings
 
 !!! warning "Requires NudeNet for nudity"
-    When `concept_name="nudity"` (or `detector="nudenet"`), requires `pip install eval-learn[asr]`.
+    When `concept_name="nudity"` (or `detector="nudenet"`), requires `pip install eval-unlearn[asr]`.
     If NudeNet is not installed, the metric raises a `RuntimeError` at initialisation.
 
 !!! warning "Requires transformers for CLIP-based detection"

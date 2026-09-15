@@ -13,7 +13,7 @@ prompt faithfulness — whether the model still generates what it is asked to ge
 After concept erasure, CLIP Score can drop if the technique over-suppresses features
 needed for general prompt adherence.
 
-**Dataset:** TIFA dataset (a diverse set of text-image prompts for faithfulness evaluation)
+**Dataset:** COCO dataset (a diverse set of real-world image captions used as text-image prompts for faithfulness evaluation)
 
 CLIP Score is concept-agnostic — it works with any technique and any `erase_concept`.
 
@@ -31,7 +31,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
 |-------|------|---------|-------------|
 | `clip_model_name` | `str` | ` "openai/clip-vit-large-patch14"` | CLIP model for embedding extraction. See supported models below. |
 | `device` | `str \| None` | `None` | Device for CLIP inference. Auto-detects CUDA if `None`. |
-| `limit` | `int \| None` | `300` | Maximum number of prompts from the TIFA dataset. |
+| `limit` | `int \| None` | `300` | Maximum number of prompts from the COCO dataset. |
 
 ### Supported CLIP models
 

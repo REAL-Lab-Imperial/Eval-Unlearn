@@ -6,8 +6,8 @@ from typing import Dict, Any
 
 class TestBaseRunnerBuildBaseReport:
     def _make_concrete_runner(self, output_dir="/tmp/test"):
-        from eval_learn.runners.core.base_runner import BaseRunner
-        from eval_learn.artifacts import ArtifactWriter
+        from eval_unlearn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.artifacts import ArtifactWriter
 
         class ConcreteRunner(BaseRunner):
             def run(self):
@@ -46,8 +46,8 @@ class TestBaseRunnerBuildBaseReport:
 
 class TestBaseRunnerResolveMMAClipModel:
     def _make_runner(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
-        from eval_learn.artifacts import ArtifactWriter
+        from eval_unlearn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.artifacts import ArtifactWriter
 
         class ConcreteRunner(BaseRunner):
             def run(self):
@@ -67,9 +67,9 @@ class TestBaseRunnerResolveMMAClipModel:
     def test_mma_with_known_technique_injects_encoder(self):
         runner = self._make_runner()
         configs = {"asr_mma_diffusion": {"concept_name": "nudity"}}
-        with patch("eval_learn.techniques._base_models.get_technique_base_model_id",
+        with patch("eval_unlearn.techniques._base_models.get_technique_base_model_id",
                    return_value="CompVis/stable-diffusion-v1-4"), \
-             patch("eval_learn.metrics._clip_constants.clip_encoder_for_sd",
+             patch("eval_unlearn.metrics._clip_constants.clip_encoder_for_sd",
                    return_value="openai/clip-vit-large-patch14"):
             result = runner._resolve_mma_clip_model(configs, "esd", {})
         assert "clip_model_id" in result["asr_mma_diffusion"]
@@ -77,7 +77,7 @@ class TestBaseRunnerResolveMMAClipModel:
     def test_mma_unknown_base_model_returns_unchanged(self):
         runner = self._make_runner()
         configs = {"asr_mma_diffusion": {}}
-        with patch("eval_learn.techniques._base_models.get_technique_base_model_id",
+        with patch("eval_unlearn.techniques._base_models.get_technique_base_model_id",
                    return_value=None):
             result = runner._resolve_mma_clip_model(configs, "free_run", {})
         # When model_id is None, original config returned unchanged
@@ -86,9 +86,9 @@ class TestBaseRunnerResolveMMAClipModel:
     def test_mma_unsupported_model_raises(self):
         runner = self._make_runner()
         configs = {"asr_mma_diffusion": {}}
-        with patch("eval_learn.techniques._base_models.get_technique_base_model_id",
+        with patch("eval_unlearn.techniques._base_models.get_technique_base_model_id",
                    return_value="unsupported/model"), \
-             patch("eval_learn.metrics._clip_constants.clip_encoder_for_sd",
+             patch("eval_unlearn.metrics._clip_constants.clip_encoder_for_sd",
                    side_effect=ValueError("unsupported model")):
             with pytest.raises(ValueError, match="asr_mma_diffusion cannot be used"):
                 runner._resolve_mma_clip_model(configs, "esd", {})
@@ -96,9 +96,9 @@ class TestBaseRunnerResolveMMAClipModel:
     def test_mma_free_run_with_model_id(self):
         runner = self._make_runner()
         configs = {"asr_mma_diffusion": {}}
-        with patch("eval_learn.techniques._base_models.get_technique_base_model_id",
+        with patch("eval_unlearn.techniques._base_models.get_technique_base_model_id",
                    return_value="CompVis/stable-diffusion-v1-4"), \
-             patch("eval_learn.metrics._clip_constants.clip_encoder_for_sd",
+             patch("eval_unlearn.metrics._clip_constants.clip_encoder_for_sd",
                    return_value="openai/clip-vit-large-patch14"):
             result = runner._resolve_mma_clip_model(
                 configs, "free_run", {"model_id": "CompVis/stable-diffusion-v1-4"}

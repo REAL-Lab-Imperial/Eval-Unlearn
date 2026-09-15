@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 from PIL import Image
 import torch
 
-from eval_learn.types import MetricResult
+from eval_unlearn.types import MetricResult
 
 
 def _dummy_image(color=(50, 100, 150)):
@@ -13,15 +13,15 @@ def _dummy_image(color=(50, 100, 150)):
 
 def _make_tifa_metric(**kwargs):
     """Build TIFAMetric with mocked BLIP-2."""
-    with patch("eval_learn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
-         patch("eval_learn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls:
+    with patch("eval_unlearn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
+         patch("eval_unlearn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls:
         mock_proc = MagicMock()
         mock_proc_cls.from_pretrained.return_value = mock_proc
         mock_model = MagicMock()
         mock_model_cls.from_pretrained.return_value = mock_model
         mock_model.to.return_value = mock_model
         mock_model.eval.return_value = mock_model
-        from eval_learn.metrics.tifa.metric import TIFAMetric
+        from eval_unlearn.metrics.tifa.metric import TIFAMetric
         metric = TIFAMetric(**kwargs)
     return metric
 
@@ -38,7 +38,7 @@ class TestTIFALoadDataset:
         metric._per_image_scores = [1.0, 0.5]
 
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
             metric.load_dataset()
 
         assert metric._correct_count == 0
@@ -49,14 +49,14 @@ class TestTIFALoadDataset:
     def test_load_dataset_returns_loader(self):
         metric = _make_tifa_metric()
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
+        with patch("eval_unlearn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
             result = metric.load_dataset()
         assert result is mock_loader
 
     def test_load_dataset_passes_limit(self):
         metric = _make_tifa_metric(limit=100)
         mock_loader = MagicMock()
-        with patch("eval_learn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader) as mock_fn:
+        with patch("eval_unlearn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader) as mock_fn:
             metric.load_dataset()
         mock_fn.assert_called_once_with(limit=100)
 

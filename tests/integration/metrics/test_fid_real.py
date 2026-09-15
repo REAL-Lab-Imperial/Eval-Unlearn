@@ -25,7 +25,7 @@ def _random_image(seed=0):
 class TestFIDReal:
     @pytest.fixture(scope="class")
     def metric(self, device):
-        from eval_learn.metrics.fid.metric import FIDMetric
+        from eval_unlearn.metrics.fid.metric import FIDMetric
         return FIDMetric(device=device, batch_size=4)
 
     def test_extract_features_shape(self, metric):
@@ -65,7 +65,7 @@ class TestFIDReal:
         assert result.details["total_real"] == n
 
     def test_compute_no_real_activations_raises(self, device):
-        from eval_learn.metrics.fid.metric import FIDMetric
+        from eval_unlearn.metrics.fid.metric import FIDMetric
         m = FIDMetric(device=device, batch_size=4)
         m._real_activations = None
         with pytest.raises(RuntimeError, match="load_dataset"):

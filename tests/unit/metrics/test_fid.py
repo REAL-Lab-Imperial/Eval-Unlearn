@@ -8,9 +8,9 @@ from PIL import Image
 
 pytest.importorskip("torchvision")
 
-from eval_learn.metrics.fid.metric import FIDMetric, _calculate_fid
-from eval_learn.metrics.fid.config import FIDConfig
-from eval_learn.types import MetricResult
+from eval_unlearn.metrics.fid.metric import FIDMetric, _calculate_fid
+from eval_unlearn.metrics.fid.config import FIDConfig
+from eval_unlearn.types import MetricResult
 
 
 class TestFIDConfig:
@@ -158,8 +158,8 @@ class TestCalculateFID:
 class TestFIDMetricInitialization:
     """Test FIDMetric initialization."""
 
-    @patch("eval_learn.metrics.fid.metric._load_inception")
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric._load_inception")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_init_success_cpu(self, mock_torch, mock_load_inception):
         """Test successful initialization on CPU."""
         mock_torch.cuda.is_available.return_value = False
@@ -172,7 +172,7 @@ class TestFIDMetricInitialization:
         assert metric._real_count == 0
         assert metric._gen_activations == []
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_init_auto_detect_device(self, mock_torch):
         """Test device auto-detection when device is None."""
         mock_torch.cuda.is_available.return_value = False
@@ -181,7 +181,7 @@ class TestFIDMetricInitialization:
 
         assert metric.device == "cpu"
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_init_with_config(self, mock_torch):
         """Test initialization with custom config."""
         mock_torch.cuda.is_available.return_value = False
@@ -195,7 +195,7 @@ class TestFIDMetricInitialization:
 class TestFIDMetricUpdateCompute:
     """Test update() and compute() workflow."""
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_without_real_features(self, mock_torch):
         """Test compute raises error without real features."""
         mock_torch.cuda.is_available.return_value = False
@@ -205,7 +205,7 @@ class TestFIDMetricUpdateCompute:
         with pytest.raises(RuntimeError, match="Real features not available"):
             metric.compute()
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_with_no_generated_images(self, mock_torch):
         """Test compute returns inf with no generated images."""
         mock_torch.cuda.is_available.return_value = False
@@ -220,7 +220,7 @@ class TestFIDMetricUpdateCompute:
         assert np.isinf(result.value)
         assert "error" in result.details
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_with_single_generated_image(self, mock_torch):
         """Test compute returns inf with only 1 generated image."""
         mock_torch.cuda.is_available.return_value = False
@@ -236,7 +236,7 @@ class TestFIDMetricUpdateCompute:
         assert np.isinf(result.value)
         assert "At least 2 generated images" in result.details["error"]
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_with_valid_features(self, mock_torch):
         """Test compute with valid real and generated features."""
         mock_torch.cuda.is_available.return_value = False
@@ -260,7 +260,7 @@ class TestFIDMetricUpdateCompute:
         assert result.details["total_real"] == 50
         assert result.details["total_generated"] == 50
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_returns_metric_result(self, mock_torch):
         """Test that compute returns MetricResult instance."""
         mock_torch.cuda.is_available.return_value = False
@@ -277,7 +277,7 @@ class TestFIDMetricUpdateCompute:
         assert isinstance(result.details, dict)
         assert "config" in result.details
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_includes_config(self, mock_torch):
         """Test that compute includes config in result."""
         mock_torch.cuda.is_available.return_value = False
@@ -292,7 +292,7 @@ class TestFIDMetricUpdateCompute:
         assert "config" in result.details
         assert result.details["config"]["batch_size"] == 64
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_update_empty_images(self, mock_torch):
         """Test update with empty image list."""
         mock_torch.cuda.is_available.return_value = False
@@ -305,7 +305,7 @@ class TestFIDMetricUpdateCompute:
 
         assert len(metric._gen_activations) == 0
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_update_accumulates_features(self, mock_torch):
         """Test that update accumulates features across batches."""
         mock_torch.cuda.is_available.return_value = False
@@ -326,7 +326,7 @@ class TestFIDMetricUpdateCompute:
             assert metric._gen_activations[0].shape == (5, 2048)
             assert metric._gen_activations[1].shape == (5, 2048)
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_update_with_pil_images(self, mock_torch):
         """Test update with PIL Image objects."""
         mock_torch.cuda.is_available.return_value = False
@@ -342,7 +342,7 @@ class TestFIDMetricUpdateCompute:
 
             assert len(metric._gen_activations) == 1
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_update_with_file_paths(self, mock_torch):
         """Test update with file paths."""
         mock_torch.cuda.is_available.return_value = False
@@ -362,7 +362,7 @@ class TestFIDMetricUpdateCompute:
 
                 assert len(metric._gen_activations) == 1
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_compute_error_handling(self, mock_torch):
         """Test compute re-raises exceptions from _calculate_fid."""
         mock_torch.cuda.is_available.return_value = False
@@ -372,11 +372,11 @@ class TestFIDMetricUpdateCompute:
         metric._real_count = 10
         metric._gen_activations = [np.random.randn(10, 2048)]
 
-        with patch("eval_learn.metrics.fid.metric._calculate_fid", side_effect=ValueError("Test error")):
+        with patch("eval_unlearn.metrics.fid.metric._calculate_fid", side_effect=ValueError("Test error")):
             with pytest.raises(ValueError, match="Test error"):
                 metric.compute()
 
-    @patch("eval_learn.metrics.fid.metric.torch")
+    @patch("eval_unlearn.metrics.fid.metric.torch")
     def test_full_workflow_update_compute(self, mock_torch):
         """Test complete workflow: initialize → update → compute."""
         mock_torch.cuda.is_available.return_value = False
@@ -427,21 +427,21 @@ class TestMetricsInitImportFailures:
         import sys
         from unittest.mock import patch as _patch
         metric_modules = [
-            "eval_learn.metrics.asr_p4d.metric",
-            "eval_learn.metrics.asr_i2p.metric",
-            "eval_learn.metrics.fid.metric",
-            "eval_learn.metrics.err.metric",
-            "eval_learn.metrics.tifa.metric",
-            "eval_learn.metrics.clip_score.metric",
-            "eval_learn.metrics.ua_ira.metric",
-            "eval_learn.metrics.asr_ring_a_bell.metric",
-            "eval_learn.metrics.asr_mma_diffusion.metric",
+            "eval_unlearn.metrics.asr_p4d.metric",
+            "eval_unlearn.metrics.asr_i2p.metric",
+            "eval_unlearn.metrics.fid.metric",
+            "eval_unlearn.metrics.err.metric",
+            "eval_unlearn.metrics.tifa.metric",
+            "eval_unlearn.metrics.clip_score.metric",
+            "eval_unlearn.metrics.ua_ira.metric",
+            "eval_unlearn.metrics.asr_ring_a_bell.metric",
+            "eval_unlearn.metrics.asr_mma_diffusion.metric",
         ]
         # Patch specific metric modules to None so their imports raise ImportError.
-        # Only remove the top-level eval_learn.metrics so its __init__ is re-executed;
+        # Only remove the top-level eval_unlearn.metrics so its __init__ is re-executed;
         # patch.dict restores the original module on exit.
         patches = {m: None for m in metric_modules}
         with _patch.dict(sys.modules, patches):
-            sys.modules.pop("eval_learn.metrics", None)
-            import eval_learn.metrics  # noqa: F401 — must not raise
+            sys.modules.pop("eval_unlearn.metrics", None)
+            import eval_unlearn.metrics  # noqa: F401 — must not raise
         assert True

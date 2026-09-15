@@ -31,7 +31,7 @@ def _make_q16_mock():
 @pytest.fixture(scope="module", autouse=True)
 def _register_dummy_technique():
     """Register a minimal technique that returns blank images."""
-    from eval_learn.registry.local import _TECHNIQUES
+    from eval_unlearn.registry.local import _TECHNIQUES
 
     class _DummyRunnerTechnique:
         def __init__(self, erase_concept="nudity", device="cpu", **kwargs):
@@ -59,9 +59,9 @@ def _make_prompts_csv(tmp_path, rows=None, filename="prompts.csv"):
 def _run_single(prompts_csv, output_dir):
     """Build and run a SingleBenchmarkRunner with fully mocked metric internals."""
     q16 = _make_q16_mock()
-    with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-         patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", return_value=q16):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+    with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+         patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", return_value=q16):
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         runner = SingleBenchmarkRunner(
             technique_name="_dummy_runner",
             metric_name="asr_p4d",
@@ -118,7 +118,7 @@ class TestSingleBenchmarkRunnerIntegration:
         assert report.get("erase_concept") == "violence"
 
     def test_invalid_technique_raises(self, tmp_path):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         with pytest.raises(ValueError, match="not found"):
             SingleBenchmarkRunner(
                 technique_name="nonexistent_technique_xyz",
@@ -127,7 +127,7 @@ class TestSingleBenchmarkRunnerIntegration:
             )
 
     def test_invalid_metric_raises(self, tmp_path):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         with pytest.raises(ValueError, match="not found"):
             SingleBenchmarkRunner(
                 technique_name="_dummy_runner",
@@ -136,7 +136,7 @@ class TestSingleBenchmarkRunnerIntegration:
             )
 
     def test_err_metric_non_nudity_raises(self, tmp_path):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         with pytest.raises(ValueError, match="nudity-specific"):
             SingleBenchmarkRunner(
                 technique_name="_dummy_runner",
@@ -146,7 +146,7 @@ class TestSingleBenchmarkRunnerIntegration:
             )
 
     def test_ua_ira_missing_paths_raises(self, tmp_path):
-        from eval_learn.runners.single_benchmark_runner import SingleBenchmarkRunner
+        from eval_unlearn.runners.single_benchmark_runner import SingleBenchmarkRunner
         with pytest.raises(ValueError, match="target_prompts_path"):
             SingleBenchmarkRunner(
                 technique_name="_dummy_runner",
@@ -174,10 +174,10 @@ class TestMultiBenchmarkRunnerIntegration:
         nude_mock = MagicMock()
         nude_mock.detect.return_value = []
 
-        with patch("eval_learn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
-             patch("eval_learn.metrics.asr_p4d.metric.Q16Classifier", return_value=q16), \
-             patch("eval_learn.metrics.asr_mma_diffusion.metric.NudeDetector", return_value=nude_mock):
-            from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        with patch("eval_unlearn.metrics.asr_p4d.metric.P4DGenerator", MagicMock()), \
+             patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", return_value=q16), \
+             patch("eval_unlearn.metrics.asr_mma_diffusion.metric.NudeDetector", return_value=nude_mock):
+            from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
             runner = MultiBenchmarkRunner(
                 technique_name="_dummy_runner",
                 metric_names=["asr_p4d", "asr_mma_diffusion"],
@@ -207,7 +207,7 @@ class TestMultiBenchmarkRunnerIntegration:
         assert "asr_mma_diffusion" in report["metric_results"]
 
     def test_duplicate_metric_names_raises(self, tmp_path):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
         with pytest.raises(ValueError, match="duplicates"):
             MultiBenchmarkRunner(
                 technique_name="_dummy_runner",
@@ -216,7 +216,7 @@ class TestMultiBenchmarkRunnerIntegration:
             )
 
     def test_empty_metric_names_raises(self, tmp_path):
-        from eval_learn.runners.multi_benchmark_runner import MultiBenchmarkRunner
+        from eval_unlearn.runners.multi_benchmark_runner import MultiBenchmarkRunner
         with pytest.raises(ValueError, match="must not be empty"):
             MultiBenchmarkRunner(
                 technique_name="_dummy_runner",
@@ -232,25 +232,25 @@ class TestMultiBenchmarkRunnerIntegration:
 class TestResolveMMAClipModel:
 
     def test_no_mma_returns_unchanged(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
         configs = {"asr_p4d": {"concept_name": "nudity"}}
         result = BaseRunner._resolve_mma_clip_model(configs, "ssd", {})
         assert result is configs
 
     def test_known_technique_resolves_encoder(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
         configs = {"asr_mma_diffusion": {"concept_name": "nudity", "output_csv": "/tmp/x.csv"}}
         result = BaseRunner._resolve_mma_clip_model(configs, "ssd", {})
         assert "clip_model_id" in result["asr_mma_diffusion"]
 
     def test_unknown_technique_logs_warning_returns_unchanged(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
         configs = {"asr_mma_diffusion": {"concept_name": "nudity", "output_csv": "/tmp/x.csv"}}
         result = BaseRunner._resolve_mma_clip_model(configs, "_dummy_runner", {})
         assert result is configs
 
     def test_free_run_with_model_id_resolves_encoder(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
         configs = {"asr_mma_diffusion": {"concept_name": "nudity", "output_csv": "/tmp/x.csv"}}
         result = BaseRunner._resolve_mma_clip_model(
             configs,
@@ -260,14 +260,14 @@ class TestResolveMMAClipModel:
         assert "clip_model_id" in result["asr_mma_diffusion"]
 
     def test_incompatible_sd_model_raises(self):
-        from eval_learn.runners.core.base_runner import BaseRunner
+        from eval_unlearn.runners.core.base_runner import BaseRunner
         configs = {"asr_mma_diffusion": {"concept_name": "nudity", "output_csv": "/tmp/x.csv"}}
         # Patch at the source module since base_runner does a local import
         with patch(
-            "eval_learn.techniques._base_models.get_technique_base_model_id",
+            "eval_unlearn.techniques._base_models.get_technique_base_model_id",
             return_value="unknown/sd-v99",
         ), patch(
-            "eval_learn.metrics._clip_constants.clip_encoder_for_sd",
+            "eval_unlearn.metrics._clip_constants.clip_encoder_for_sd",
             side_effect=ValueError("unsupported model"),
         ):
             with pytest.raises(ValueError, match="asr_mma_diffusion cannot be used"):
@@ -281,17 +281,17 @@ class TestResolveMMAClipModel:
 class TestGenerateRunId:
 
     def test_run_id_is_8_chars(self):
-        from eval_learn.runners.single_benchmark_runner import generate_run_id
+        from eval_unlearn.runners.single_benchmark_runner import generate_run_id
         rid = generate_run_id("ssd", {}, "asr_p4d", {}, 12345.0)
         assert len(rid) == 8
 
     def test_run_id_deterministic(self):
-        from eval_learn.runners.single_benchmark_runner import generate_run_id
+        from eval_unlearn.runners.single_benchmark_runner import generate_run_id
         rid1 = generate_run_id("ssd", {"a": 1}, "asr_p4d", {"b": 2}, 9.0)
         rid2 = generate_run_id("ssd", {"a": 1}, "asr_p4d", {"b": 2}, 9.0)
         assert rid1 == rid2
 
     def test_multi_run_id_is_8_chars(self):
-        from eval_learn.runners.multi_benchmark_runner import generate_multi_run_id
+        from eval_unlearn.runners.multi_benchmark_runner import generate_multi_run_id
         rid = generate_multi_run_id("ssd", {}, ["asr_p4d"], {"asr_p4d": {}}, "test", 1.0)
         assert len(rid) == 8

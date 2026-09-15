@@ -81,7 +81,7 @@ The multi runner is selected automatically when your config contains a `metrics`
 ## Python API
 
 ```python
-from eval_learn.runners import MultiBenchmarkRunner
+from eval_unlearn.runners import MultiBenchmarkRunner
 
 runner = MultiBenchmarkRunner(
     technique_name="esd",
