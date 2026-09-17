@@ -1,11 +1,21 @@
 """Unit tests for CLIP Score metric."""
 
+import math
 from unittest.mock import Mock, patch, MagicMock
 import pytest
+import torch
 
 from eval_unlearn.metrics.clip_score.metric import CLIPScoreMetric
 from eval_unlearn.metrics.clip_score.config import CLIPScoreConfig
 from eval_unlearn.types import MetricResult
+
+
+def _embeddings_for_cosine(cos_val: float):
+    """Build a pair of already-unit-norm embeddings with the given cosine similarity."""
+    sin_val = math.sqrt(max(0.0, 1.0 - cos_val**2))
+    image_features = torch.tensor([[1.0, 0.0]])
+    text_features = torch.tensor([[cos_val, sin_val]])
+    return image_features, text_features
 
 
 class TestCLIPScoreConfig:
@@ -14,7 +24,7 @@ class TestCLIPScoreConfig:
     def test_config_defaults(self):
         """Test default configuration values."""
         config = CLIPScoreConfig()
-        assert config.clip_model_name == "openai/clip-vit-large-patch14"
+        assert config.clip_model_name == "openai/clip-vit-base-patch32"
         assert config.device is None
         assert config.limit == 300
 
@@ -84,29 +94,26 @@ class TestCLIPScoreMetricUpdate:
         """Test update with valid image-prompt pairs."""
         metric = _make_clip_metric(device="cpu")
 
-        mock_outputs = Mock()
-        mock_outputs.logits_per_image.item.return_value = 0.75
-
         from PIL import Image as PILImage
-        import contextlib
 
-        # Patch the metric's model and processor to return controlled values
+        # cosine similarity == 1.0 -> score 100.0
+        image_features, text_features = _embeddings_for_cosine(1.0)
+        mock_model = Mock()
+        mock_model.get_image_features = Mock(return_value=image_features)
+        mock_model.get_text_features = Mock(return_value=text_features)
+        metric.model = mock_model
+
         mock_inputs = MagicMock()
         mock_inputs.to.return_value = mock_inputs
         metric.processor = Mock(return_value=mock_inputs)
-        metric.model = Mock(return_value=mock_outputs)
 
-        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
-            mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
-            mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
-
-            pil_img = PILImage.new("RGB", (4, 4))
-            with patch.object(metric, "_load_image_pil", return_value=pil_img):
-                metric.update([Mock(), Mock()], ["prompt1", "prompt2"])
+        pil_img = PILImage.new("RGB", (4, 4))
+        with patch.object(metric, "_load_image_pil", return_value=pil_img):
+            metric.update([Mock(), Mock()], ["prompt1", "prompt2"])
 
         assert metric._total_count == 2
         assert metric._evaluated_count == 2
-        assert metric._total_score == pytest.approx(1.5)  # 0.75 + 0.75
+        assert metric._total_score == pytest.approx(200.0)  # 100.0 + 100.0
         assert len(metric._per_image_scores) == 2
 
     def test_update_with_failed_image_loading(self):
@@ -127,30 +134,30 @@ class TestCLIPScoreMetricUpdate:
         from PIL import Image as PILImage
         pil_img = PILImage.new("RGB", (4, 4))
 
-        score_vals = iter([0.8, 0.9])
+        # image_features stays fixed at [1, 0]; text_features varies per call
+        # to produce cosine similarities of 0.8 and 0.9 respectively.
+        image_features = torch.tensor([[1.0, 0.0]])
+        text_pairs = iter(
+            [_embeddings_for_cosine(0.8)[1], _embeddings_for_cosine(0.9)[1]]
+        )
 
-        def make_outputs():
-            v = next(score_vals)
-            out = Mock()
-            out.logits_per_image.item.return_value = v
-            return out
+        mock_model = Mock()
+        mock_model.get_image_features = Mock(return_value=image_features)
+        mock_model.get_text_features = Mock(side_effect=lambda *a, **k: next(text_pairs))
+        metric.model = mock_model
 
         mock_inputs = MagicMock()
         mock_inputs.to.return_value = mock_inputs
         metric.processor = Mock(return_value=mock_inputs)
-        metric.model = Mock(side_effect=lambda **kw: make_outputs())
 
-        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
-            mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
-            mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
+        with patch.object(metric, "_load_image_pil", return_value=pil_img):
+            metric.update([Mock()], ["prompt1"])
+            assert metric._total_count == 1
 
-            with patch.object(metric, "_load_image_pil", return_value=pil_img):
-                metric.update([Mock()], ["prompt1"])
-                assert metric._total_count == 1
-
-                metric.update([Mock()], ["prompt2"])
-                assert metric._total_count == 2
-                assert metric._evaluated_count == 2
+            metric.update([Mock()], ["prompt2"])
+            assert metric._total_count == 2
+            assert metric._evaluated_count == 2
+            assert metric._total_score == pytest.approx(170.0)  # 80.0 + 90.0
 
 
 class TestCLIPScoreMetricComputation:
@@ -246,30 +253,31 @@ class TestCLIPScoreMetricIntegration:
         from PIL import Image as PILImage
         pil_img = PILImage.new("RGB", (4, 4))
 
-        score_vals = iter([0.75, 0.8, 0.85])
+        image_features = torch.tensor([[1.0, 0.0]])
+        text_pairs = iter(
+            [
+                _embeddings_for_cosine(0.75)[1],
+                _embeddings_for_cosine(0.8)[1],
+                _embeddings_for_cosine(0.85)[1],
+            ]
+        )
 
-        def make_outputs():
-            v = next(score_vals)
-            out = Mock()
-            out.logits_per_image.item.return_value = v
-            return out
+        mock_model = Mock()
+        mock_model.get_image_features = Mock(return_value=image_features)
+        mock_model.get_text_features = Mock(side_effect=lambda *a, **k: next(text_pairs))
+        metric.model = mock_model
 
         mock_inputs = MagicMock()
         mock_inputs.to.return_value = mock_inputs
         metric.processor = Mock(return_value=mock_inputs)
-        metric.model = Mock(side_effect=lambda **kw: make_outputs())
 
-        with patch("eval_unlearn.metrics.clip_score.metric.torch") as mock_torch:
-            mock_torch.no_grad.return_value.__enter__ = Mock(return_value=None)
-            mock_torch.no_grad.return_value.__exit__ = Mock(return_value=False)
-
-            with patch.object(metric, "_load_image_pil", return_value=pil_img):
-                metric.update([Mock(), Mock(), Mock()], ["prompt1", "prompt2", "prompt3"])
+        with patch.object(metric, "_load_image_pil", return_value=pil_img):
+            metric.update([Mock(), Mock(), Mock()], ["prompt1", "prompt2", "prompt3"])
 
         result = metric.compute()
 
         assert result.name == "CLIPScore"
-        assert result.value == pytest.approx(0.8)  # (0.75 + 0.8 + 0.85) / 3
+        assert result.value == pytest.approx(80.0)  # (75 + 80 + 85) / 3
         assert result.details["evaluated_count"] == 3
         assert result.details["total_count"] == 3
 

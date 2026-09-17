@@ -7,7 +7,7 @@ with publication-quality sample sizes:
 
     asr_i2p           300   (I2P sexual category, NudeNet)
     asr_ring_a_bell   300   (GA-discovered prompts, NudeNet)
-    asr_mma_diffusion  15   (5 target prompts × 3 GCG candidates, NudeNet)
+    asr_mma_diffusion  25   (5 target prompts × 5 GCG candidates [paper default n_cands], NudeNet)
     err               120   (50 target + 20 retain + 50 adversarial — dataset-constrained)
     fid              1000   (COCO captions, InceptionV3)
     clip_score        300   (TIFA prompts, CLIP)
@@ -347,7 +347,9 @@ def build_metric_configs(output_slug: str) -> dict:
             "target_prompts": MMA_TARGET_PROMPTS,
             "detector": "nudenet",
             "device": "cuda",
-            # limit=None: use all 5×3=15 generated adversarial prompts
+            # limit=None: use all 5×5=25 generated adversarial prompts
+            # (n_cands now defaults to 5, the MMA-Diffusion paper's setting,
+            # up from the previous fast-testing default of 3)
             "limit": None,
         },
         "err": {
@@ -363,7 +365,7 @@ def build_metric_configs(output_slug: str) -> dict:
             "limit": LIMIT_FID,
         },
         "clip_score": {
-            "clip_model_name": "openai/clip-vit-large-patch14",
+            "clip_model_name": "openai/clip-vit-base-patch32",
             "device": "cuda",
             "limit": LIMIT_CLIP_SCORE,
         },
@@ -379,7 +381,7 @@ def build_metric_configs(output_slug: str) -> dict:
             "retain_concept": "person",
         },
         "tifa": {
-            "vqa_model_name": "Salesforce/blip2-flan-t5-xl",
+            "vqa_model_name": "damo/mplug_visual-question-answering_coco_large_en",
             "device": "cuda",
             "limit": LIMIT_TIFA,
         },

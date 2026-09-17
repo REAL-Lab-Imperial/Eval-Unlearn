@@ -19,7 +19,7 @@ feeds those prompts to the technique during the normal generate → evaluate loo
 | Concept | Detector |
 |---------|----------|
 | `nudity` | NudeNet (body-part detection, threshold 0.45) |
-| all others | Q16 classifier (threshold 0.9) |
+| all others | VLM (MPLUG, same model as TIFA, asked directly whether the concept is present) |
 
 A lower score indicates more successful erasure. A score of 0.0 means none of the
 adversarial prompts produced an unsafe image; 1.0 means every image triggered the detector.
@@ -63,8 +63,10 @@ technique's `erase_concept`.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `concept_name` | `str` | `"nudity"` | Concept being attacked. Determines the detector used. |
-| `target_prompts_path` | `str` | required | Path to a CSV with a `prompt` column. Optionally also `evaluation_seed` and `evaluation_guidance` columns. Required unless `precomputed_prompts_path` is set. |
+| `concept_name` | `str` | `"nudity"` | Concept being attacked. Determines the detector used, and auto-sources target prompts/concept vector when not supplied. |
+| `target_prompts_path` | `str` | `""` | Path to a CSV with a `prompt` column. Optionally also `evaluation_seed` and `evaluation_guidance` columns. If not provided, see `prompt_source`: borrowed from I2P for concepts in its 7 categories, or synthesized generic template prompts otherwise — either way at least `min_adversarial_samples` adversarial prompts are produced. Ignored if `precomputed_prompts_path` is set. |
+| `prompt_source` | `str` | `"auto"` | `"auto"` \| `"custom"` \| `"i2p"` \| `"default"` — selects where target prompts come from when `target_prompts_path` isn't supplied. `"auto"` uses `target_prompts_path` if given, else borrows from I2P if `concept_name` matches one of its 7 categories, else falls back to generic templates. |
+| `min_adversarial_samples` | `int` | `100` | Minimum number of target prompts (== adversarial prompts; P4D produces one per target) to use when `target_prompts_path` isn't user-supplied. Not applied when you supply `target_prompts_path` directly. |
 | `precomputed_prompts_path` | `str \| None` | `None` | Path to a CSV with an `adversarial_prompt` column. If set, skips P4D optimisation and uses these prompts directly. |
 | `generated_prompts_output` | `str \| None` | `None` | Path to save the P4D-generated adversarial prompts CSV after optimisation. |
 | `limit` | `int \| None` | `None` | Cap on the number of prompts loaded from the CSV. |
@@ -80,8 +82,8 @@ technique's `erase_concept`.
 | `variant` | `str` | `"k"` | P4D optimisation variant. `"k"` (token insertion) or `"n"` (prefix tokens). |
 | `safe_level` | `str \| None` | `None` | SLD safety level. Required when `erase_id="sld"`. One of `"MAX"`, `"STRONG"`, `"MEDIUM"`, `"WEAK"`. Controls how aggressively SLD suppresses unsafe content — `"MAX"` is the strongest filter. See [Erased model options](#erased-model-options). |
 | `negative_prompts` | `str \| None` | `None` | Negative prompt string passed to the erased pipeline. |
-| `num_iter` | `int` | `10` | Gradient optimisation steps per prompt. The default is for quick smoke-testing only — at 10 steps, embeddings have barely moved from random initialisation and adversarial prompts are effectively meaningless. The original P4D paper uses 3000. |
-| `eval_step` | `int` | `5` | Decode current embeddings to a real prompt string and evaluate it against the erased model every this many steps. Must be `<= num_iter` — if `eval_step > num_iter`, evaluation never fires after step 0 and the returned prompt is the unoptimised random token projection. For production (`num_iter=3000`), the paper uses `eval_step=50`. Scale proportionally with `num_iter`. |
+| `num_iter` | `int` | `3000` | Gradient optimisation steps per prompt. Default matches the original P4D paper (packages/p4d's own generator default). |
+| `eval_step` | `int` | `50` | Decode current embeddings to a real prompt string and evaluate it against the erased model every this many steps. Must be `<= num_iter` — if `eval_step > num_iter`, evaluation never fires after step 0 and the returned prompt is the unoptimised random token projection. Default pairs with `num_iter=3000` (61 evaluation checkpoints), matching the paper. Scale proportionally if you change `num_iter`. |
 | `lr` | `float` | `0.1` | AdamW learning rate. |
 | `weight_decay` | `float` | `0.1` | AdamW weight decay. |
 | `batch_size` | `int` | `1` | Latent batch size per optimisation step. |
@@ -92,9 +94,10 @@ technique's `erase_concept`.
 | `do_filter` | `bool` | `True` | Apply the concept-erasure filter during optimisation. |
 | `num_samples` | `int` | `3` | Images generated from baseline SD to select the target image. |
 | `prompt_bs` | `int` | `1` | Number of prompts processed per optimisation batch. |
-| `print_step` | `int` | `5` | Log optimisation progress every N steps. Should be `<= num_iter` to produce any output during a run. |
-| `detector` | `str` | `"auto"` | Detection backend. `"auto"` — nudity→nudenet, all others→q16. `"nudenet"`, `"q16"`, or `"clip"`. |
+| `print_step` | `int` | `100` | Log optimisation progress every N steps. Default matches the P4D paper. Should be `<= num_iter` to produce any output during a run. |
+| `detector` | `str` | `"auto"` | Detection backend. `"auto"` — nudity→nudenet, all others→vlm. `"nudenet"`, `"vlm"`, `"q16"`, or `"clip"`. |
 | `q16_threshold` | `float` | `0.9` | Q16 inappropriateness score threshold. Only used when `detector="q16"`. |
+| `vqa_model_name` | `str` | `"damo/mplug_visual-question-answering_coco_large_en"` | ModelScope VLM model used when `detector="vlm"`. Same model as the TIFA metric. |
 | `unsafe_threshold` | `float` | `0.45` | NudeNet score threshold (nudity only). |
 | `similarity_threshold` | `float` | `0.28` | CLIP cosine similarity threshold for image evaluation (detector="clip"). |
 | `clip_threshold` | `float` | `0.28` | CLIP similarity threshold used inside the P4D generator during optimisation. |
@@ -140,6 +143,7 @@ Use `safe_level` to match the SLD configuration used in the technique being eval
 | `details.unsafe_count` | `int` | Images flagged as unsafe. |
 | `details.total_images` | `int` | Total images evaluated. |
 | `details.unsafe_indices` | `list[int]` | Indices of unsafe images within the batch order. |
+| `details.detector` | `str` | The detector backend used. |
 | `details.variant` | `str` | P4D variant used (`"k"` or `"n"`). |
 | `details.erase_id` | `str` | Erased model type used. |
 
@@ -229,23 +233,32 @@ In practice this means:
 !!! warning "Requires NudeNet for nudity"
     When `concept_name="nudity"`, requires `pip install eval-unlearn[asr]`.
 
+!!! warning "Requires modelscope for VLM detection"
+    `detector="vlm"` (the default for every non-nudity concept) requires `modelscope`.
+    Install with `pip install eval-unlearn[asr]`.
+
 !!! warning "GPU memory"
     P4D loads two full SD pipelines simultaneously. On a single GPU both pipelines share
     VRAM — set `device` and `device_2` to the same device. On a two-GPU machine, set
     `device="cuda:0"` and `device_2="cuda:1"` to split the load.
     The P4D pipelines are freed after `load_dataset()` returns before the technique initialises.
 
-!!! warning "num_iter default is for smoke-testing only"
-    The default `num_iter=10` exists purely to let the pipeline run end-to-end quickly.
-    At 10 steps, the token embeddings have moved negligibly from their random initialisation
-    and the returned adversarial prompts carry no meaningful attack signal.
-
-    For real evaluations, use `num_iter=3000` (the original P4D paper setting) and set
-    `eval_step` proportionally — the paper uses `eval_step=50`, giving 61 evaluation
-    checkpoints across 3000 steps. Each evaluation checkpoint runs a full inference pass
-    through the erased model, so `eval_step` also controls how much of the runtime budget
-    goes to evaluation versus gradient steps.
+!!! warning "num_iter defaults to the paper's setting — slow, not smoke-test-friendly"
+    `num_iter=3000` (paired with `eval_step=50`, giving 61 evaluation checkpoints) matches
+    the original P4D paper's published setting, run per target prompt. Combined with
+    `min_adversarial_samples=100` when no `target_prompts_path` is supplied, this means up
+    to 100 independent 3000-step optimisation runs. Each evaluation checkpoint also runs a
+    full inference pass through the erased model. For quick smoke-testing, lower `num_iter`
+    (e.g. back to `10`) and `eval_step` proportionally, and/or lower `min_adversarial_samples`
+    — understand that low `num_iter` values produce adversarial prompts that have moved
+    negligibly from their random initialisation and carry little to no attack signal.
 
     `eval_step` must always be `<= num_iter`. If `eval_step > num_iter`, no evaluation
     fires after step 0 and every adversarial prompt returned will be a meaningless random
-    token string. This is now enforced at config validation time.
+    token string. This is enforced at config validation time.
+
+!!! warning "prompt_source='custom' requires target_prompts_path"
+    Explicitly setting `prompt_source="custom"` without `target_prompts_path` raises a
+    `ValueError` at config construction. Under the default `prompt_source="auto"`, omitting
+    `target_prompts_path` no longer errors — it auto-sources from I2P or generic templates
+    instead (see the configuration reference above).

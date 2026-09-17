@@ -17,7 +17,8 @@ def _make_p4d_metric(detector="nudenet", concept="nudity", **kwargs):
          patch("eval_unlearn.metrics.asr_p4d.metric.NudeDetector", MagicMock()), \
          patch("eval_unlearn.metrics.asr_p4d.metric.Q16Classifier", MagicMock()), \
          patch("eval_unlearn.metrics.asr_p4d.metric.CLIPModel", MagicMock()), \
-         patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()):
+         patch("eval_unlearn.metrics.asr_p4d.metric.CLIPProcessor", MagicMock()), \
+         patch("eval_unlearn.metrics._vlm_detector.pipeline", MagicMock()):
         from eval_unlearn.metrics.asr_p4d.metric import ASRP4D
         metric = ASRP4D(
             concept_name=concept,
@@ -64,11 +65,48 @@ class TestASRP4DLoadDatasetGeneration:
         loader = metric.load_dataset()
         assert isinstance(loader, DataLoader)
 
-    def test_load_missing_both_paths_raises(self):
-        """When neither precomputed nor target path is given, should raise."""
+    def test_load_missing_target_path_borrows_from_i2p_for_nudity(self):
+        """'nudity' is an I2P category, so with no target_prompts_path or
+        precomputed_prompts_path it now auto-borrows I2P prompts instead of
+        raising."""
         metric = _make_p4d_metric(detector="nudenet", concept="nudity")
-        with pytest.raises(ValueError, match="target_prompts_path or precomputed_prompts_path"):
-            metric.load_dataset()
+        mock_p4d_gen = MagicMock()
+        mock_p4d_gen.generate.return_value = [
+            {"adversarial_prompt": "adv1", "target_prompt": "t1", "best_similarity": 0.9},
+        ]
+        import eval_unlearn.metrics.asr_p4d.metric as m
+        m.P4DGenerator = MagicMock(return_value=mock_p4d_gen)
+
+        from eval_unlearn.types import Dataset
+        mock_loader = [Dataset(prompts=["a nude person"], metadata={})]
+        with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=mock_loader) as mock_load:
+            loader = metric.load_dataset()
+        mock_load.assert_called_once_with(concept="nudity", limit=metric.config.min_adversarial_samples)
+        from torch.utils.data import DataLoader
+        assert isinstance(loader, DataLoader)
+
+    def test_load_missing_target_path_uses_defaults_for_non_i2p_concept(self):
+        """A concept outside I2P's 7 categories with no target_prompts_path
+        falls back to synthesized generic template prompts."""
+        metric = _make_p4d_metric(detector="q16", concept="a made up concept")
+        mock_p4d_gen = MagicMock()
+        mock_p4d_gen.generate.return_value = [
+            {"adversarial_prompt": "adv1", "target_prompt": "t1", "best_similarity": 0.9},
+        ]
+        import eval_unlearn.metrics.asr_p4d.metric as m
+        m.P4DGenerator = MagicMock(return_value=mock_p4d_gen)
+
+        loader = metric.load_dataset()
+        called_prompts = mock_p4d_gen.generate.call_args.kwargs["target_prompts"]
+        assert all("a made up concept" in p for p in called_prompts)
+        from torch.utils.data import DataLoader
+        assert isinstance(loader, DataLoader)
+
+    def test_prompt_source_custom_without_target_path_raises(self):
+        """Explicitly requesting prompt_source='custom' still requires target_prompts_path."""
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
+        with pytest.raises(ValueError, match="prompt_source='custom' requires target_prompts_path"):
+            ASRP4DConfig(concept_name="nudity", prompt_source="custom")
 
     def test_load_saves_generated_prompts(self, tmp_path):
         """Test generated_prompts_output saves the CSV."""
@@ -186,9 +224,10 @@ class TestASRP4DConfigExtended:
         metric = _make_p4d_metric(concept="nudity", detector="auto")
         assert metric._detector == "nudenet"
 
-    def test_q16_auto_resolves_for_non_nudity(self):
+    def test_vlm_auto_resolves_for_non_nudity(self):
         metric = _make_p4d_metric(concept="violence", detector="auto")
-        assert metric._detector == "q16"
+        assert metric._detector == "vlm"
+        assert metric.vlm_detector is not None
 
     def test_custom_erase_id_no_checkpoint_warns(self):
         """erase_id='custom' without checkpoint path should log warning, not raise."""

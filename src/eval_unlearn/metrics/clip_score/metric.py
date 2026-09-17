@@ -9,6 +9,7 @@ logger = get_logger(__name__)
 
 try:
     import torch
+    import torch.nn.functional as F
     from transformers import CLIPModel, CLIPProcessor
     from PIL import Image
 except ImportError as e:
@@ -23,8 +24,11 @@ class CLIPScoreMetric:
     """
     CLIP Score Metric.
 
-    Measures text-to-image alignment via cosine similarity between CLIP
-    embeddings of each generated image and its prompt.
+    Measures text-to-image alignment as the L2-normalized cosine similarity
+    between CLIP image and text embeddings, scaled by 100 (i.e.
+    ``100 * cosine_similarity``). Image and text embeddings are obtained
+    separately via ``get_image_features`` / ``get_text_features`` rather than
+    the model's joint forward pass.
 
     update() runs the CLIP forward pass immediately and accumulates a running
     score total + count. compute() returns the average — no images are retained.
@@ -75,6 +79,19 @@ class CLIPScoreMetric:
             logger.warning(f"Unsupported image type: {type(img)}")
             return None
 
+    @staticmethod
+    def _unwrap_features(output):
+        """
+        Unwrap the output of ``get_image_features`` / ``get_text_features``.
+
+        Some transformers versions return a plain tensor; others return a
+        ``BaseModelOutputWithPooling`` whose projected embedding lives in
+        ``.pooler_output``. Handle both.
+        """
+        if torch.is_tensor(output):
+            return output
+        return output.pooler_output
+
     def update(
         self,
         images: List[Any],
@@ -100,12 +117,26 @@ class CLIPScoreMetric:
             try:
                 # Process image and text
                 with torch.no_grad():
-                    inputs = self.processor(images=pil_img, text=prompt, return_tensors="pt").to(self.device)
-                    outputs = self.model(**inputs)
+                    inputs = self.processor(
+                        text=prompt, images=pil_img, return_tensors="pt", padding=True
+                    ).to(self.device)
 
-                # Compute cosine similarity
-                logits_per_image = outputs.logits_per_image
-                score_val = logits_per_image.item()
+                    image_features = self._unwrap_features(
+                        self.model.get_image_features(inputs.pixel_values)
+                    )
+                    text_features = self._unwrap_features(
+                        self.model.get_text_features(inputs.input_ids)
+                    )
+
+                    image_features = F.normalize(image_features, dim=-1)
+                    text_features = F.normalize(text_features, dim=-1)
+
+                    # 100x cosine similarity, matching the scale of the previous
+                    # logit_scale-weighted score this metric used to report.
+                    score_val = (
+                        F.cosine_similarity(image_features, text_features).mean().item()
+                        * 100.0
+                    )
 
                 self._per_image_scores.append(score_val)
                 self._total_score += score_val

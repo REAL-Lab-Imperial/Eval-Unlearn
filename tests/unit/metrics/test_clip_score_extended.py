@@ -1,5 +1,7 @@
 """Extended tests for CLIPScore metric targeting uncovered lines."""
+import math
 import pytest
+import torch
 from unittest.mock import MagicMock, patch
 from PIL import Image
 import tempfile
@@ -10,6 +12,14 @@ from eval_unlearn.types import MetricResult
 
 def _dummy_image(color=(50, 100, 150)):
     return Image.new("RGB", (16, 16), color=color)
+
+
+def _embeddings_for_cosine(cos_val: float):
+    """Build a pair of already-unit-norm embeddings with the given cosine similarity."""
+    sin_val = math.sqrt(max(0.0, 1.0 - cos_val**2))
+    image_features = torch.tensor([[1.0, 0.0]])
+    text_features = torch.tensor([[cos_val, sin_val]])
+    return image_features, text_features
 
 
 def _make_clip_score_metric(**kwargs):
@@ -93,12 +103,13 @@ class TestCLIPScoreLoadImagePil:
 # ---------------------------------------------------------------------------
 class TestCLIPScoreUpdate:
     def _metric_with_outputs(self, score=25.0):
-        import torch
+        """Build a metric whose model yields embeddings producing the given
+        final score (= 100 * cosine similarity)."""
         metric = _make_clip_score_metric()
+        image_features, text_features = _embeddings_for_cosine(score / 100.0)
         mock_model = MagicMock()
-        mock_outputs = MagicMock()
-        mock_outputs.logits_per_image = torch.tensor([[score]])
-        mock_model.return_value = mock_outputs
+        mock_model.get_image_features = MagicMock(return_value=image_features)
+        mock_model.get_text_features = MagicMock(return_value=text_features)
         metric.model = mock_model
         mock_proc = MagicMock()
         mock_inputs = MagicMock()
@@ -124,7 +135,7 @@ class TestCLIPScoreUpdate:
 
     def test_update_model_error_handled(self):
         metric = _make_clip_score_metric()
-        metric.model.side_effect = RuntimeError("GPU OOM")
+        metric.model.get_image_features.side_effect = RuntimeError("GPU OOM")
         mock_proc = MagicMock()
         mock_inputs = MagicMock()
         mock_inputs.to.return_value = mock_inputs
@@ -145,7 +156,6 @@ class TestCLIPScoreUpdate:
         assert metric._evaluated_count == 2
 
     def test_update_with_file_path(self, tmp_path):
-        import torch
         metric = self._metric_with_outputs(score=15.0)
         p = tmp_path / "img.png"
         _dummy_image().save(str(p))

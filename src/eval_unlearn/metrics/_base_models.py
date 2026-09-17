@@ -16,12 +16,12 @@ class MetricModelInfo(NamedTuple):
 
 
 METRIC_MODELS: dict = {
-    "asr_i2p":      MetricModelInfo("NudeNet / openai/clip-vit-large-patch14", configurable=True, config_field="clip_model_id", note="NudeNet for nudity; CLIP for other concepts", choices=SUPPORTED_CLIP_MODELS),
+    "asr_i2p":      MetricModelInfo("NudeNet / openai/clip-vit-large-patch14", configurable=True, config_field="clip_model_id", note="NudeNet for nudity; VLM (MPLUG) for other concepts by default", choices=SUPPORTED_CLIP_MODELS),
     "asr_ring_a_bell": MetricModelInfo("openai/clip-vit-large-patch14", configurable=True,  config_field="clip_model_id",   choices=SUPPORTED_CLIP_MODELS),
-    "clip_score":   MetricModelInfo( "openai/clip-vit-large-patch14",     configurable=True,  config_field="clip_model_name", choices=SUPPORTED_CLIP_MODELS),
+    "clip_score":   MetricModelInfo( "openai/clip-vit-base-patch32",     configurable=True,  config_field="clip_model_name", choices=SUPPORTED_CLIP_MODELS),
     "err":          MetricModelInfo("openai/clip-vit-large-patch14",    configurable=True,  config_field="clip_model_name", choices=SUPPORTED_CLIP_MODELS),
     "fid":          MetricModelInfo("Inception V3 (IMAGENET1K_V1)",     configurable=False, note="torchvision"),
     "asr_mma_diffusion": MetricModelInfo("openai/clip-vit-large-patch14", configurable=False, note="injected from technique base model"),
-    "tifa":         MetricModelInfo("Salesforce/blip2-flan-t5-xl",      configurable=True,  config_field="vqa_model_name"),
+    "tifa":         MetricModelInfo("damo/mplug_visual-question-answering_coco_large_en", configurable=True,  config_field="vqa_model_name"),
     "ua_ira":       MetricModelInfo("openai/clip-vit-large-patch14",    configurable=True,  config_field="clip_model_name", choices=SUPPORTED_CLIP_MODELS),
 }

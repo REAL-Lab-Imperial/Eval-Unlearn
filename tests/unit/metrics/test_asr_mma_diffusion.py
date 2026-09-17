@@ -67,6 +67,19 @@ class TestMMADiffusionConfig:
         with pytest.raises(ValueError, match="similarity_threshold"):
             MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv", similarity_threshold=-0.5)
 
+    def test_gcg_defaults_match_paper(self):
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        config = MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv")
+        assert config.n_steps == 1000
+        assert config.n_cands == 5
+        assert config.batch_size == 512
+        assert config.topk == 256
+
+    def test_min_adversarial_samples_default_is_100(self):
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        config = MMADiffusionConfig(concept_name="nudity", output_csv="/tmp/o.csv")
+        assert config.min_adversarial_samples == 100
+
 
 # ---------------------------------------------------------------------------
 # load_dataset — GCG generation path
@@ -91,7 +104,10 @@ class TestMMALoadDataset:
         assert isinstance(loader, DataLoader)
 
     def test_load_dataset_uses_i2p_targets_for_nudity(self):
-        """When target_prompts is unset, nudity attacks target I2P prompts."""
+        """When target_prompts is unset, nudity attacks target I2P prompts,
+        requesting enough targets to reach min_adversarial_samples images
+        after GCG produces n_cands candidates per target."""
+        import math
         metric = _make_metric()
         mock_gen = MagicMock()
         mock_gen.generate.return_value = [
@@ -102,7 +118,8 @@ class TestMMALoadDataset:
         with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=_mock_i2p_loader(i2p_prompts)) as mock_load:
             metric.load_dataset()
 
-        mock_load.assert_called_once_with(concept="nudity", limit=metric.config.i2p_target_limit)
+        expected_needed = math.ceil(metric.config.min_adversarial_samples / metric.config.n_cands)
+        mock_load.assert_called_once_with(concept="nudity", limit=expected_needed)
         mock_gen.generate.assert_called_once()
         assert mock_gen.generate.call_args.kwargs["target_prompts"] == i2p_prompts
 
@@ -364,14 +381,45 @@ class TestMMADiffusionCoverageGaps:
         from torch.utils.data import DataLoader
         assert isinstance(loader, DataLoader)
 
-    def test_no_target_prompts_for_non_nudity_raises(self):
-        """Line 163: ValueError when non-nudity concept has no target_prompts."""
-        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier") as mock_q16:
+    def test_violence_with_no_target_prompts_borrows_from_i2p(self):
+        """'violence' is one of I2P's 7 categories, so with no target_prompts
+        it now auto-borrows from I2P instead of raising."""
+        import math
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier"):
             from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
             metric = MMADiffusionMetric(concept_name="violence", output_csv="/tmp/o.csv",
                                         detector="q16")
-        with pytest.raises(ValueError, match="target_prompts"):
+        mock_gen = MagicMock()
+        mock_gen.generate.return_value = [{"adversarial_prompt": "adv", "target_prompt": "v"}]
+        metric._AdversarialPromptGenerator = MagicMock(return_value=mock_gen)
+        i2p_prompts = ["violent scene"]
+        with patch("eval_unlearn.datasets.i2p_csv.load_i2p_csv", return_value=_mock_i2p_loader(i2p_prompts)) as mock_load:
             metric.load_dataset()
+        expected_needed = math.ceil(metric.config.min_adversarial_samples / metric.config.n_cands)
+        mock_load.assert_called_once_with(concept="violence", limit=expected_needed)
+
+    def test_non_i2p_concept_with_no_target_prompts_uses_defaults(self):
+        """A concept outside I2P's 7 categories with no target_prompts falls
+        back to synthesized generic template prompts instead of raising."""
+        with patch("eval_unlearn.metrics.asr_mma_diffusion.metric.Q16Classifier"):
+            from eval_unlearn.metrics.asr_mma_diffusion.metric import MMADiffusionMetric
+            metric = MMADiffusionMetric(
+                concept_name="a made up concept", output_csv="/tmp/o.csv", detector="q16"
+            )
+        mock_gen = MagicMock()
+        mock_gen.generate.return_value = [{"adversarial_prompt": "adv", "target_prompt": "x"}]
+        metric._AdversarialPromptGenerator = MagicMock(return_value=mock_gen)
+        metric.load_dataset()
+        called_targets = mock_gen.generate.call_args.kwargs["target_prompts"]
+        assert all("a made up concept" in p for p in called_targets)
+
+    def test_prompt_source_custom_without_target_prompts_raises(self):
+        """Explicitly requesting prompt_source='custom' still requires target_prompts."""
+        from eval_unlearn.metrics.asr_mma_diffusion.config import MMADiffusionConfig
+        with pytest.raises(ValueError, match="prompt_source='custom' requires target_prompts"):
+            MMADiffusionConfig(
+                concept_name="violence", output_csv="/tmp/o.csv", prompt_source="custom"
+            )
 
     def test_is_unsafe_q16_numpy_array(self):
         """Lines 223-225: numpy array handling in _is_unsafe_q16."""

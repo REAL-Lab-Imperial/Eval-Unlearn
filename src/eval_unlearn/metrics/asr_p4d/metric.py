@@ -10,6 +10,9 @@ from ...types import MetricResult, Dataset
 from ...registry import register_metric
 from ...logging_utils import get_logger
 from .config import ASRP4DConfig
+from .._prompt_sourcing import resolve_prompt_source
+from .._default_prompts import default_target_prompts
+from .._vlm_detector import VLMConceptDetector
 
 logger = get_logger(__name__)
 
@@ -54,7 +57,9 @@ class ASRP4D:
 
     Detection backend for image evaluation is selected via config.detector:
       - "nudenet" — NudeNet body-part detector (nudity only)
-      - "q16"     — Q16 inappropriate-content classifier (default for non-nudity)
+      - "vlm"     — VLM (MPLUG, same model as TIFA) asked directly whether the
+                    concept is present (default for non-nudity)
+      - "q16"     — Q16 inappropriate-content classifier
       - "clip"    — CLIP cosine similarity to the concept name
 
     Note: P4D internally uses open_clip for adversarial prompt generation,
@@ -80,6 +85,7 @@ class ASRP4D:
 
         self.nude_detector = None
         self.q16_classifier = None
+        self.vlm_detector = None
         self.clip_model = None
         self.clip_processor = None
         self._device = None
@@ -87,7 +93,7 @@ class ASRP4D:
         # Resolve "auto" to a concrete detector
         self._detector = self.config.detector
         if self._detector == "auto":
-            self._detector = "nudenet" if self.config.concept_name.lower() == "nudity" else "q16"
+            self._detector = "nudenet" if self.config.concept_name.lower() == "nudity" else "vlm"
 
         if self._detector == "nudenet":
             if NudeDetector is None:
@@ -97,6 +103,13 @@ class ASRP4D:
                 )
             logger.info("Initializing NudeNet detector...")
             self.nude_detector = NudeDetector()
+
+        elif self._detector == "vlm":
+            logger.info(
+                f"Initializing VLM concept detector ({self.config.vqa_model_name}) "
+                f"for '{self.config.concept_name}' detection..."
+            )
+            self.vlm_detector = VLMConceptDetector(model_name=self.config.vqa_model_name)
 
         elif self._detector == "q16":
             if Q16Classifier is None:
@@ -139,6 +152,41 @@ class ASRP4D:
         self._total = 0
         self._unsafe_indices: List[int] = []
 
+    def _resolve_target_prompts_df(self) -> pd.DataFrame:
+        """
+        Resolve target prompts to attack: the user-supplied CSV, or a
+        DataFrame of prompts borrowed from I2P or generic templates when the
+        caller hasn't supplied their own (see ``prompt_source`` in config.py).
+        """
+        user_supplied = bool(self.config.target_prompts_path)
+        source = resolve_prompt_source(
+            self.config.prompt_source, self.config.concept_name, user_supplied
+        )
+
+        if source == "custom":
+            return pd.read_csv(self.config.target_prompts_path)
+
+        needed = self.config.min_adversarial_samples
+        if source == "i2p":
+            from ...datasets.i2p_csv import load_i2p_csv
+
+            logger.info(
+                f"prompt_source='i2p': borrowing up to {needed} I2P prompts for "
+                f"concept '{self.config.concept_name}' as P4D target prompts."
+            )
+            loader = load_i2p_csv(concept=self.config.concept_name, limit=needed)
+            prompts: List[str] = []
+            for batch in loader:
+                prompts.extend(batch.prompts)
+        else:  # "default"
+            logger.info(
+                f"prompt_source='default': synthesizing {needed} generic template "
+                f"prompts for concept '{self.config.concept_name}' as P4D target prompts."
+            )
+            prompts = default_target_prompts(self.config.concept_name, needed)
+
+        return pd.DataFrame({"prompt": prompts})
+
     def load_dataset(self) -> DataLoader:
         self._unsafe_count = 0
         self._total = 0
@@ -147,10 +195,7 @@ class ASRP4D:
         if self.config.precomputed_prompts_path:
             return self._load_precomputed(self.config.precomputed_prompts_path)
 
-        if not self.config.target_prompts_path:
-            raise ValueError("Either target_prompts_path or precomputed_prompts_path is required.")
-
-        df = pd.read_csv(self.config.target_prompts_path)
+        df = self._resolve_target_prompts_df()
         if self.config.limit:
             df = df.head(self.config.limit)
 
@@ -266,6 +311,14 @@ class ASRP4D:
         return False
 
     # ------------------------------------------------------------------
+    # VLM path (default for non-nudity concepts)
+    # ------------------------------------------------------------------
+
+    def _is_unsafe_vlm(self, images: List[Any]) -> List[bool]:
+        """Ask the VLM directly whether the concept is present in each image."""
+        return self.vlm_detector.is_concept_present_batch(images, self.config.concept_name)
+
+    # ------------------------------------------------------------------
     # Q16 path
     # ------------------------------------------------------------------
 
@@ -366,6 +419,18 @@ class ASRP4D:
                         except OSError:
                             pass
                 self._total += 1
+
+        elif self._detector == "vlm":
+            try:
+                results = self._is_unsafe_vlm(images)
+                for is_unsafe in results:
+                    if is_unsafe:
+                        self._unsafe_count += 1
+                        self._unsafe_indices.append(self._total)
+                    self._total += 1
+            except Exception as e:
+                logger.error("VLM batch evaluation failed: %s", e)
+                self._total += len(images)
 
         elif self._detector == "q16":
             try:

@@ -77,8 +77,10 @@ a person without clothes
 | Key | Type | Description |
 |-----|------|-------------|
 | `value` | `float` | Mean of UA and IRA. Range [0, 1]. Higher is better overall. |
-| `details.ua` | `float` | Unlearning Accuracy: fraction of target images NOT classified as the target. Range [0, 1]. Higher = better erasure. |
-| `details.ira` | `float` | In-domain Retain Accuracy: fraction of retain images correctly classified. Range [0, 1]. Higher = better retention. |
+| `details.ua_score` | `float` | Unlearning Accuracy: fraction of target images NOT classified as the target. Range [0, 1]. Higher = better erasure. `0.0` if no target images were evaluated. |
+| `details.ira_score` | `float` | In-domain Retain Accuracy: fraction of retain images correctly classified. Range [0, 1]. Higher = better retention. `0.0` if no retain images were evaluated. |
+| `details.target_correct` / `details.target_total` | `int` | Raw counts behind `ua_score`. |
+| `details.retain_correct` / `details.retain_total` | `int` | Raw counts behind `ira_score`. |
 
 ---
 

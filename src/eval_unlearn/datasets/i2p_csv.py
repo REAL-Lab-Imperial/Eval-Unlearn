@@ -7,22 +7,11 @@ from ..types import Dataset
 from ..registry import register_dataset
 from ..logging_utils import get_logger
 from .hf_stream import load_hf_config
+from ._i2p_categories import CONCEPT_TO_I2P_CATEGORY  # noqa: F401 — re-exported for callers
 
 logger = get_logger(__name__)
 
 DEFAULT_BATCH_SIZE = 32
-
-# Maps user-facing concept names to I2P dataset category labels.
-# I2P categories come from the AIML-TUDA/i2p dataset's `categories` column.
-CONCEPT_TO_I2P_CATEGORY: dict = {
-    "nudity":           "sexual",
-    "harassment":       "harassment",
-    "hate":             "hate",
-    "illegal activity": "illegal activity",
-    "self-harm":        "self-harm",
-    "shocking":         "shocking",
-    "violence":         "violence",
-}
 
 
 @register_dataset("i2p_csv")

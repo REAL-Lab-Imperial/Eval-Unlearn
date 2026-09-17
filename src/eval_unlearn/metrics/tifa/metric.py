@@ -1,3 +1,4 @@
+from statistics import mean
 from typing import List, Any, Dict, Optional
 from torch.utils.data import DataLoader
 from ...types import MetricResult
@@ -9,11 +10,12 @@ logger = get_logger(__name__)
 
 try:
     import torch
-    from transformers import Blip2Processor, Blip2ForConditionalGeneration
+    from modelscope.pipelines import pipeline
+    from modelscope.utils.constant import Tasks
     from PIL import Image
 except ImportError as e:
     raise ImportError(
-        "TIFA metric requires 'torch', 'transformers', and 'Pillow'. "
+        "TIFA metric requires 'torch', 'modelscope', and 'Pillow'. "
         "Install with: pip install eval-unlearn[tifa]"
     ) from e
 
@@ -23,12 +25,18 @@ class TIFAMetric:
     """
     TIFA (Text-to-Image Faithfulness) Metric.
 
-    Uses BLIP-2 VQA to verify whether generated images answer a set of
-    question-answer pairs derived from the prompt. Score is the fraction of
-    correctly answered questions across all images.
+    Mirrors the official ``tifascore.tifa_score_benchmark`` implementation:
+    an MPLUG VQA model answers each question derived from the prompt, and the
+    free-form answer is compared against the expected answer. Note: unlike
+    the original TIFA v1.0 benchmark, this dataset does not carry per-question
+    multiple-choice ``choices``, so there is no SBERT choice-snapping step —
+    scoring is exact string match on the free-form answer.
 
-    update() runs BLIP-2 immediately on each (image, qa_pairs) and accumulates
-    correct/total question counts. compute() returns the ratio — no images retained.
+    update() runs MPLUG immediately on each (image, qa_pairs) and records a
+    per-image list of question scores. compute() first averages each image's
+    question scores (per-image accuracy), then averages those per-image
+    scores across all images — the same two-stage "macro-average" used by
+    tifa_score_benchmark, rather than pooling all questions together.
 
     batch.metadata must contain:
     - ``qa_pairs``: list parallel to images, each element a list of
@@ -43,17 +51,13 @@ class TIFAMetric:
         )
 
         logger.info(
-            f"Loading BLIP-2 VQA model '{self.config.vqa_model_name}' on {self.device}..."
+            f"Loading MPLUG VQA model '{self.config.vqa_model_name}'..."
         )
-        self._processor = Blip2Processor.from_pretrained(self.config.vqa_model_name)
-        self._model = Blip2ForConditionalGeneration.from_pretrained(
-            self.config.vqa_model_name,
-            torch_dtype=torch.float16,
-        ).to(self.device)
-        self._model.eval()
-        logger.info("BLIP-2 VQA model ready.")
+        self._vqa_pipeline = pipeline(
+            Tasks.visual_question_answering, model=self.config.vqa_model_name
+        )
+        logger.info("MPLUG VQA model ready.")
 
-        self._correct_count = 0
         self._total_questions_count = 0
         self._total_images_count = 0
         self._per_image_scores: List[Optional[float]] = []
@@ -62,7 +66,6 @@ class TIFAMetric:
         """Return a DataLoader over the TIFA dataset."""
         from ...datasets.tifa_csv import load_tifa_csv
 
-        self._correct_count = 0
         self._total_questions_count = 0
         self._total_images_count = 0
         self._per_image_scores = []
@@ -73,20 +76,13 @@ class TIFAMetric:
     # VQA engine
     # ------------------------------------------------------------------
 
-    @torch.no_grad()
-    def _answer(self, pil_image, question: str, max_new_tokens: int = 10) -> str:
-        """Run VQA on a single PIL image and question."""
+    def _answer(self, pil_image, question: str) -> str:
+        """Run VQA on a single PIL image and question via MPLUG."""
         if pil_image.mode != "RGB":
             pil_image = pil_image.convert("RGB")
-        inputs = self._processor(
-            images=pil_image,
-            text=question,
-            return_tensors="pt",
-        ).to(self.device, torch.float16)
-        generated_ids = self._model.generate(**inputs, max_new_tokens=max_new_tokens)
-        return self._processor.decode(
-            generated_ids[0], skip_special_tokens=True
-        ).strip()
+        result = self._vqa_pipeline({"image": pil_image, "question": question})
+        answer = result["text"]
+        return answer[0] if isinstance(answer, list) else answer
 
     # ------------------------------------------------------------------
     # Public interface
@@ -99,8 +95,8 @@ class TIFAMetric:
         metadata: Optional[Dict[str, Any]] = None,
     ) -> None:
         """
-        Run BLIP-2 VQA on each image against its QA pairs and accumulate
-        correct/total question counts.
+        Run MPLUG VQA on each image against its QA pairs and record a
+        per-image list of question scores (1 = correct, 0 = incorrect).
 
         Args:
             images:    Generated PIL Images or file paths.
@@ -123,8 +119,7 @@ class TIFAMetric:
                 self._total_images_count += 1
                 continue
 
-            img_correct = 0
-            img_total = 0
+            question_scores: List[int] = []
             for qa in questions:
                 question = qa.get("question", "")
                 expected = qa.get("answer", "")
@@ -132,38 +127,37 @@ class TIFAMetric:
                     continue
                 prediction = self._answer(pil_img, question)
                 self._total_questions_count += 1
-                img_total += 1
-                if prediction.lower().strip() == expected.lower().strip():
-                    self._correct_count += 1
-                    img_correct += 1
+                question_scores.append(
+                    int(prediction.lower().strip() == expected.lower().strip())
+                )
 
             self._per_image_scores.append(
-                img_correct / img_total if img_total > 0 else None
+                mean(question_scores) if question_scores else None
             )
             self._total_images_count += 1
 
     def compute(self) -> MetricResult:
         """
-        Return TIFA score as correct / total questions.
-        All VQA inference was done in update() — this is division only.
+        Return the TIFA score as the mean of per-image question-accuracy
+        scores (macro-average across images), matching
+        ``tifascore.tifa_score_benchmark``'s ``tifa_average``.
         """
-        if self._total_images_count == 0:
+        valid_scores = [s for s in self._per_image_scores if s is not None]
+
+        if not valid_scores:
             return MetricResult(
                 name="TIFA", value=0.0, details={"error": "No images evaluated"}
             )
 
-        tifa_score = (
-            self._correct_count / self._total_questions_count if self._total_questions_count > 0 else 0.0
-        )
+        tifa_score = mean(valid_scores)
         logger.info(
-            f"TIFA Score: {tifa_score:.4f} ({self._correct_count}/{self._total_questions_count} correct)"
+            f"TIFA Score: {tifa_score:.4f} (macro-average over {len(valid_scores)} images)"
         )
 
         return MetricResult(
             name="TIFA",
             value=tifa_score,
             details={
-                "correct_count": self._correct_count,
                 "total_questions_count": self._total_questions_count,
                 "total_images_count": self._total_images_count,
                 "per_image_scores": self._per_image_scores,

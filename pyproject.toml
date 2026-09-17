@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eval-unlearn"
-version = "1.0.2"
+version = "1.1.0"
 description = "Unlearning Benchmark for Text-to-Image Models"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
@@ -43,12 +43,13 @@ Source = "https://github.com/REAL-Lab-Imperial/Eval-Unlearn"
 
 [project.optional-dependencies]
 # Metric extras (PyPI packages)
-asr = ["nudenet>=3.4.2"]
+asr = ["nudenet>=3.4.2", "modelscope>=1.9.0"]
 fid = ["torchvision>=0.26.0"]
 coco = ["torchvision>=0.26.0"]
+tifa = ["modelscope>=1.9.0"]
 # Development
 dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0", "ruff>=0.0.1", "mypy>=1.0.0"]
-all = ["eval-unlearn[asr,fid,coco,dev]"]
+all = ["eval-unlearn[asr,fid,coco,tifa,dev]"]
 
 # Note: Technique packages (esd, mace, uce, safree, sld, saeuron)
 # are local editable installs declared in requirements.txt

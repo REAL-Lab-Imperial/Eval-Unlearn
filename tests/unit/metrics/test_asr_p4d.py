@@ -47,6 +47,20 @@ class TestASRP4DConfig:
         assert cfg.detector == "auto"
         assert cfg.erase_id == "std"
 
+    def test_optimisation_defaults_match_paper(self):
+        """num_iter/eval_step/print_step default to the P4D paper's published
+        settings (packages/p4d's own generator defaults)."""
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
+        cfg = ASRP4DConfig.from_dict({"concept_name": "nudity"})
+        assert cfg.num_iter == 3000
+        assert cfg.eval_step == 50
+        assert cfg.print_step == 100
+
+    def test_min_adversarial_samples_default_is_100(self):
+        from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
+        cfg = ASRP4DConfig.from_dict({"concept_name": "nudity"})
+        assert cfg.min_adversarial_samples == 100
+
     def test_invalid_detector(self):
         from eval_unlearn.metrics.asr_p4d.config import ASRP4DConfig
         with pytest.raises(ValueError, match="detector must be one of"):

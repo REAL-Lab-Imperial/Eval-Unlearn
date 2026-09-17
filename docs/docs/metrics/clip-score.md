@@ -2,11 +2,11 @@
 
 ## Overview
 
-CLIP Score measures how well generated images match their text prompts. It uses
-`logits_per_image` from the CLIP model, which is cosine similarity between the image
-and text embeddings scaled by the model's learned temperature parameter (~100 for standard
-OpenAI CLIP models). A higher score means generated images are more semantically aligned
-with the prompts used to generate them.
+CLIP Score measures how well generated images match their text prompts. Image and text
+embeddings are obtained separately via the CLIP model's `get_image_features` /
+`get_text_features`, L2-normalized, and compared with cosine similarity, scaled by 100
+(i.e. `100 * cosine_similarity`). A higher score means generated images are more
+semantically aligned with the prompts used to generate them.
 
 Unlike FID, which measures distributional similarity to real images, CLIP Score measures
 prompt faithfulness — whether the model still generates what it is asked to generate.
@@ -29,7 +29,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `clip_model_name` | `str` | ` "openai/clip-vit-large-patch14"` | CLIP model for embedding extraction. See supported models below. |
+| `clip_model_name` | `str` | ` "openai/clip-vit-base-patch32"` | CLIP model for embedding extraction. See supported models below. |
 | `device` | `str \| None` | `None` | Device for CLIP inference. Auto-detects CUDA if `None`. |
 | `limit` | `int \| None` | `300` | Maximum number of prompts from the COCO dataset. |
 
@@ -37,7 +37,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
 
 - `openai/clip-vit-base-patch16`
 - `openai/clip-vit-base-patch32` (default — faster, slightly lower accuracy)
-- `openai/clip-vit-large-patch14` (higher accuracy)
+- `openai/clip-vit-large-patch14` (higher accuracy, slower)
 - `openai/clip-vit-large-patch14-336`
 
 ---
@@ -46,7 +46,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `value` | `float` | Mean CLIP logit score across all prompt-image pairs. Computed as temperature-scaled cosine similarity — typical values for SD models fall between 20 and 35. Higher is better. Scores are only comparable across runs that use the same `clip_model_name`. |
+| `value` | `float` | Mean CLIP score across all prompt-image pairs, computed as `100 * cosine_similarity` between L2-normalized image/text embeddings — typical values for SD models fall between 20 and 35. Higher is better. Scores are only comparable across runs that use the same `clip_model_name`. |
 | `details.per_image_scores` | `list[float \| None]` | Per-image scores in evaluation order. `None` for images that failed to load. |
 | `details.evaluated_count` | `int` | Number of images successfully scored. |
 | `details.total_count` | `int` | Total images attempted (includes failures). |
@@ -84,7 +84,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
   "metric": {
     "name": "clip_score",
     "config": {
-      "clip_model_name":  "openai/clip-vit-large-patch14",
+      "clip_model_name":  "openai/clip-vit-base-patch32",
       "device": "cuda",
       "limit": 300
     }
@@ -98,7 +98,7 @@ All techniques are compatible with CLIP Score. No concept restrictions.
 {
   "name": "clip_score",
   "config": {
-    "clip_model_name":  "openai/clip-vit-large-patch14",
+    "clip_model_name":  "openai/clip-vit-base-patch32",
     "device": "cuda",
     "limit": 300
   }

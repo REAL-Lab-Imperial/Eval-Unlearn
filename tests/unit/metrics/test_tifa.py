@@ -17,19 +17,19 @@ class TestTIFAConfig:
     def test_config_defaults(self):
         """Test default configuration values."""
         config = TIFAConfig()
-        assert config.vqa_model_name == "Salesforce/blip2-flan-t5-xl"
+        assert config.vqa_model_name == "damo/mplug_visual-question-answering_coco_large_en"
         assert config.device is None
         assert config.limit == 200
 
     def test_config_from_dict(self):
         """Test creating config from dictionary."""
         config_dict = {
-            "vqa_model_name": "Salesforce/blip2-opt-2.7b",
+            "vqa_model_name": "damo/mplug_visual-question-answering_base_en",
             "device": "cpu",
             "limit": 100,
         }
         config = TIFAConfig.from_dict(config_dict)
-        assert config.vqa_model_name == "Salesforce/blip2-opt-2.7b"
+        assert config.vqa_model_name == "damo/mplug_visual-question-answering_base_en"
         assert config.device == "cpu"
         assert config.limit == 100
 
@@ -42,25 +42,12 @@ class TestTIFAConfig:
 
 
 def _make_tifa_metric(**kwargs):
-    """Helper: create TIFAMetric with mocked BLIP-2 model/processor."""
-    with patch("eval_unlearn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
-         patch("eval_unlearn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls, \
+    """Helper: create TIFAMetric with a mocked MPLUG modelscope pipeline."""
+    with patch("eval_unlearn.metrics.tifa.metric.pipeline") as mock_pipeline_fn, \
          patch("eval_unlearn.metrics.tifa.metric.torch") as mock_torch:
         mock_torch.cuda.is_available.return_value = False
-        mock_torch.float16 = torch.float16
-        mock_torch.no_grad = MagicMock(
-            return_value=MagicMock(
-                __enter__=MagicMock(return_value=None),
-                __exit__=MagicMock(return_value=False),
-            )
-        )
 
-        mock_proc = Mock()
-        mock_proc_cls.from_pretrained.return_value = mock_proc
-
-        mock_model = Mock()
-        mock_model_cls.from_pretrained.return_value = mock_model
-        mock_model.to.return_value = mock_model
+        mock_pipeline_fn.return_value = Mock()
 
         metric = TIFAMetric(**kwargs)
 
@@ -75,10 +62,8 @@ class TestTIFAMetricInitialization:
         metric = _make_tifa_metric(device="cpu")
 
         assert metric.device == "cpu"
-        # Model is loaded eagerly, so _processor and _model should not be None
-        assert metric._processor is not None
-        assert metric._model is not None
-        assert metric._correct_count == 0
+        # Model is loaded eagerly, so the VQA pipeline should not be None
+        assert metric._vqa_pipeline is not None
         assert metric._total_questions_count == 0
         assert metric._total_images_count == 0
         assert metric._per_image_scores == []
@@ -103,20 +88,31 @@ class TestTIFAAnswerMethod:
             assert isinstance(answer, str)
             assert answer == "yes"
 
-    def test_answer_strips_whitespace(self):
-        """Test _answer strips whitespace from output."""
+    def test_answer_calls_pipeline_with_image_and_question(self):
+        """Test _answer forwards image/question to the modelscope pipeline."""
         metric = _make_tifa_metric(device="cpu")
+        metric._vqa_pipeline = Mock(return_value={"text": "yes"})
 
-        with patch.object(metric, "_answer", return_value="yes"):
-            answer = metric._answer(Image.new("RGB", (10, 10)), "Q?")
-            assert answer == "yes"  # Should be stripped
+        img = Image.new("RGB", (10, 10), color="red")
+        answer = metric._answer(img, "Is this red?")
+
+        assert answer == "yes"
+        metric._vqa_pipeline.assert_called_once_with({"image": img, "question": "Is this red?"})
+
+    def test_answer_unwraps_list_response(self):
+        """Test _answer unwraps a list-valued 'text' response."""
+        metric = _make_tifa_metric(device="cpu")
+        metric._vqa_pipeline = Mock(return_value={"text": ["yes"]})
+
+        answer = metric._answer(Image.new("RGB", (10, 10)), "Q?")
+        assert answer == "yes"
 
 
 class TestTIFAMetricUpdate:
     """Test update() method."""
 
     def test_update_correct_answer(self):
-        """Test update counts correct answer."""
+        """Test update records a correct per-image score."""
         metric = _make_tifa_metric(device="cpu")
 
         img = Image.new("RGB", (10, 10), color="red")
@@ -130,13 +126,12 @@ class TestTIFAMetricUpdate:
         with patch.object(metric, "_answer", return_value="yes"):
             metric.update([img], ["prompt"], metadata)
 
-            assert metric._correct_count == 1
             assert metric._total_questions_count == 1
             assert metric._total_images_count == 1
             assert metric._per_image_scores[0] == 1.0
 
     def test_update_incorrect_answer(self):
-        """Test update counts incorrect answer."""
+        """Test update records an incorrect per-image score."""
         metric = _make_tifa_metric(device="cpu")
 
         img = Image.new("RGB", (10, 10), color="red")
@@ -150,7 +145,6 @@ class TestTIFAMetricUpdate:
         with patch.object(metric, "_answer", return_value="no"):
             metric.update([img], ["prompt"], metadata)
 
-            assert metric._correct_count == 0
             assert metric._total_questions_count == 1
             assert metric._per_image_scores[0] == 0.0
 
@@ -169,11 +163,11 @@ class TestTIFAMetricUpdate:
         with patch.object(metric, "_answer", return_value="YES"):
             metric.update([img], ["prompt"], metadata)
 
-            assert metric._correct_count == 1  # Should match despite case
+            assert metric._per_image_scores[0] == 1.0  # Should match despite case
             assert metric._total_questions_count == 1
 
     def test_update_multiple_qa_pairs(self):
-        """Test update with multiple QA pairs per image."""
+        """Test update with multiple QA pairs per image averages within the image."""
         metric = _make_tifa_metric(device="cpu")
 
         img = Image.new("RGB", (10, 10), color="red")
@@ -191,7 +185,6 @@ class TestTIFAMetricUpdate:
         with patch.object(metric, "_answer", side_effect=["yes", "no", "red"]):
             metric.update([img], ["prompt"], metadata)
 
-            assert metric._correct_count == 3
             assert metric._total_questions_count == 3
             assert metric._per_image_scores[0] == 1.0
 
@@ -207,7 +200,6 @@ class TestTIFAMetricUpdate:
 
         metric.update([None], ["prompt"], metadata)
 
-        assert metric._correct_count == 0
         assert metric._total_questions_count == 0
         assert metric._per_image_scores[0] is None
 
@@ -222,7 +214,6 @@ class TestTIFAMetricUpdate:
 
         metric.update([img], ["prompt"], metadata)
 
-        assert metric._correct_count == 0
         assert metric._total_questions_count == 0
         assert metric._per_image_scores[0] is None
 
@@ -245,7 +236,7 @@ class TestTIFAMetricUpdate:
             with patch.object(metric, "_answer", return_value="yes"):
                 metric.update([img_path], ["prompt"], metadata)
 
-                assert metric._correct_count == 1
+                assert metric._per_image_scores[0] == 1.0
                 assert metric._total_questions_count == 1
 
 
@@ -266,7 +257,6 @@ class TestTIFAMetricComputation:
         """Test compute with perfect accuracy."""
         metric = _make_tifa_metric(device="cpu")
 
-        metric._correct_count = 10
         metric._total_questions_count = 10
         metric._total_images_count = 2
         metric._per_image_scores = [1.0, 1.0]
@@ -275,30 +265,39 @@ class TestTIFAMetricComputation:
 
         assert result.name == "TIFA"
         assert result.value == 1.0
-        assert result.details["correct_count"] == 10
         assert result.details["total_questions_count"] == 10
 
-    def test_compute_partial_score(self):
-        """Test compute with partial correctness."""
+    def test_compute_macro_averages_per_image_scores(self):
+        """Test compute averages per-image scores, not pooled questions."""
         metric = _make_tifa_metric(device="cpu")
 
-        metric._correct_count = 6
-        metric._total_questions_count = 10
+        # Image 1: 1/1 correct (score 1.0); Image 2: 1/3 correct (score ~0.33)
+        # A pooled/micro average would give 2/4 = 0.5; the macro average of
+        # per-image scores gives (1.0 + 0.333...) / 2 = 0.667.
+        metric._total_questions_count = 4
         metric._total_images_count = 2
-        metric._per_image_scores = [1.0, 0.5]
+        metric._per_image_scores = [1.0, 1 / 3]
 
         result = metric.compute()
 
-        assert result.name == "TIFA"
-        assert result.value == pytest.approx(0.6)
-        assert result.details["correct_count"] == 6
-        assert result.details["total_questions_count"] == 10
+        assert result.value == pytest.approx((1.0 + 1 / 3) / 2)
+
+    def test_compute_ignores_none_per_image_scores(self):
+        """Test compute excludes images with no valid QA pairs from the average."""
+        metric = _make_tifa_metric(device="cpu")
+
+        metric._total_questions_count = 2
+        metric._total_images_count = 2
+        metric._per_image_scores = [1.0, None]
+
+        result = metric.compute()
+
+        assert result.value == 1.0
 
     def test_compute_returns_metric_result(self):
         """Test that compute returns MetricResult instance."""
         metric = _make_tifa_metric(device="cpu")
 
-        metric._correct_count = 5
         metric._total_questions_count = 10
         metric._total_images_count = 1
         metric._per_image_scores = [0.5]
@@ -334,14 +333,14 @@ class TestTIFAMetricIntegration:
             ]
         }
 
-        # Mock _answer to return different responses (2 correct, 2 incorrect)
+        # Mock _answer: image 1 fully correct, image 2 fully incorrect
         with patch.object(metric, "_answer", side_effect=["yes", "red", "no", "blue"]):
             metric.update(imgs, ["prompt"] * 2, metadata)
 
             result = metric.compute()
 
             assert result.name == "TIFA"
-            assert result.value == pytest.approx(0.5)  # 2 correct out of 4
-            assert result.details["correct_count"] == 2
+            # Macro-average of per-image scores: (1.0 + 0.0) / 2 = 0.5
+            assert result.value == pytest.approx(0.5)
             assert result.details["total_questions_count"] == 4
             assert result.details["total_images_count"] == 2

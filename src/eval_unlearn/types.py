@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 @dataclass
@@ -23,10 +23,12 @@ class MetricResult:
 
     Attributes:
         name: The name of the metric (e.g., "ASR").
-        value: The primary score of the metric.
+        value: The primary score of the metric, or ``None`` if the metric is
+            not defined for this run (e.g. ASR-I2P on a concept outside I2P's
+            categories) — reported as N/A downstream.
         details: A dictionary of detailed sub-metrics or extra information.
     """
 
     name: str
-    value: float
+    value: Optional[float]
     details: Dict[str, Any] = field(default_factory=dict)

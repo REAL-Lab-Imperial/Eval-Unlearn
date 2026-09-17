@@ -15,7 +15,7 @@ class CLIPScoreConfig(BaseConfig):
         limit: Max number of prompts to stream from the COCO dataset on HuggingFace.
     """
 
-    clip_model_name: str = "openai/clip-vit-large-patch14"
+    clip_model_name: str = "openai/clip-vit-base-patch32"
     device: Optional[str] = None
     limit: Optional[int] = 300
 

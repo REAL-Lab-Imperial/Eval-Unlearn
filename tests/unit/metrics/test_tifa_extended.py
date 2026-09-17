@@ -1,8 +1,7 @@
 """Extended tests for TIFA metric targeting uncovered lines."""
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 from PIL import Image
-import torch
 
 from eval_unlearn.types import MetricResult
 
@@ -12,15 +11,9 @@ def _dummy_image(color=(50, 100, 150)):
 
 
 def _make_tifa_metric(**kwargs):
-    """Build TIFAMetric with mocked BLIP-2."""
-    with patch("eval_unlearn.metrics.tifa.metric.Blip2Processor") as mock_proc_cls, \
-         patch("eval_unlearn.metrics.tifa.metric.Blip2ForConditionalGeneration") as mock_model_cls:
-        mock_proc = MagicMock()
-        mock_proc_cls.from_pretrained.return_value = mock_proc
-        mock_model = MagicMock()
-        mock_model_cls.from_pretrained.return_value = mock_model
-        mock_model.to.return_value = mock_model
-        mock_model.eval.return_value = mock_model
+    """Build TIFAMetric with a mocked MPLUG modelscope pipeline."""
+    with patch("eval_unlearn.metrics.tifa.metric.pipeline") as mock_pipeline_fn:
+        mock_pipeline_fn.return_value = Mock()
         from eval_unlearn.metrics.tifa.metric import TIFAMetric
         metric = TIFAMetric(**kwargs)
     return metric
@@ -32,7 +25,6 @@ def _make_tifa_metric(**kwargs):
 class TestTIFALoadDataset:
     def test_load_dataset_resets_counters(self):
         metric = _make_tifa_metric()
-        metric._correct_count = 5
         metric._total_questions_count = 10
         metric._total_images_count = 3
         metric._per_image_scores = [1.0, 0.5]
@@ -41,7 +33,6 @@ class TestTIFALoadDataset:
         with patch("eval_unlearn.datasets.tifa_csv.load_tifa_csv", return_value=mock_loader):
             metric.load_dataset()
 
-        assert metric._correct_count == 0
         assert metric._total_questions_count == 0
         assert metric._total_images_count == 0
         assert metric._per_image_scores == []
@@ -62,48 +53,39 @@ class TestTIFALoadDataset:
 
 
 # ---------------------------------------------------------------------------
-# update — _answer and update logic (lines 63-70, 79-87, 118-119, 132)
+# update — _answer and update logic
 # ---------------------------------------------------------------------------
 class TestTIFAUpdate:
     def _metric_with_answer(self, answer_text="yes"):
         metric = _make_tifa_metric()
-        mock_proc = MagicMock()
-        mock_inputs = MagicMock()
-        mock_inputs.to.return_value = mock_inputs
-        mock_proc.return_value = mock_inputs
-        mock_proc.decode.return_value = answer_text
-        metric._processor = mock_proc
-
-        mock_model = MagicMock()
-        mock_model.generate.return_value = torch.zeros(1, 5, dtype=torch.long)
-        metric._model = mock_model
+        mock_vqa_pipeline = Mock(return_value={"text": answer_text})
+        metric._vqa_pipeline = mock_vqa_pipeline
         return metric
 
     def test_update_correct_answer_counted(self):
         metric = self._metric_with_answer("yes")
         qa_pairs = [{"question": "Is this a cat?", "answer": "yes"}]
         metric.update([_dummy_image()], ["prompt"], {"qa_pairs": [qa_pairs]})
-        assert metric._correct_count == 1
+        assert metric._per_image_scores[0] == 1.0
         assert metric._total_questions_count == 1
 
     def test_update_wrong_answer_not_counted(self):
         metric = self._metric_with_answer("no")
         qa_pairs = [{"question": "Is this a cat?", "answer": "yes"}]
         metric.update([_dummy_image()], ["prompt"], {"qa_pairs": [qa_pairs]})
-        assert metric._correct_count == 0
+        assert metric._per_image_scores[0] == 0.0
         assert metric._total_questions_count == 1
 
     def test_update_none_image_skipped(self):
         metric = self._metric_with_answer("yes")
         metric.update([None], ["prompt"], {"qa_pairs": [[{"question": "q?", "answer": "a"}]]})
         assert metric._total_images_count == 1
-        assert metric._correct_count == 0
+        assert metric._per_image_scores == [None]
 
     def test_update_no_qa_pairs_skipped(self):
         metric = self._metric_with_answer("yes")
         metric.update([_dummy_image()], ["prompt"], {"qa_pairs": [None]})
         assert metric._total_images_count == 1
-        assert metric._correct_count == 0
         assert metric._per_image_scores == [None]
 
     def test_update_empty_qa_pair_skipped(self):
@@ -113,6 +95,7 @@ class TestTIFAUpdate:
         metric.update([_dummy_image()], ["prompt"], {"qa_pairs": [qa_pairs]})
         # Both have empty field, so no questions counted
         assert metric._total_questions_count == 0
+        assert metric._per_image_scores == [None]
 
     def test_update_file_path_image(self, tmp_path):
         metric = self._metric_with_answer("cat")
@@ -128,7 +111,7 @@ class TestTIFAUpdate:
         metric.update(["/nonexistent/img.png"], ["prompt"], {"qa_pairs": [qa_pairs]})
         assert metric._total_images_count == 1
         # Image couldn't be loaded, so qa pairs were skipped
-        assert metric._correct_count == 0
+        assert metric._per_image_scores == [None]
 
     def test_update_no_metadata_uses_defaults(self):
         metric = self._metric_with_answer("yes")
@@ -151,7 +134,28 @@ class TestTIFAUpdate:
         ]
         metric.update([_dummy_image()], ["p"], {"qa_pairs": [qa_pairs]})
         assert metric._total_questions_count == 2
-        assert metric._correct_count == 2  # Both answered "cat"
+        assert metric._per_image_scores[0] == 1.0  # Both answered "cat"
+
+
+# ---------------------------------------------------------------------------
+# _answer
+# ---------------------------------------------------------------------------
+class TestTIFAAnswer:
+    def test_answer_passes_pil_image_and_question(self):
+        metric = _make_tifa_metric()
+        metric._vqa_pipeline = Mock(return_value={"text": "cat"})
+        img = _dummy_image()
+
+        answer = metric._answer(img, "what is this?")
+
+        assert answer == "cat"
+        metric._vqa_pipeline.assert_called_once_with({"image": img, "question": "what is this?"})
+
+    def test_answer_unwraps_list_text(self):
+        metric = _make_tifa_metric()
+        metric._vqa_pipeline = Mock(return_value={"text": ["cat"]})
+        answer = metric._answer(_dummy_image(), "what is this?")
+        assert answer == "cat"
 
 
 # ---------------------------------------------------------------------------
@@ -164,11 +168,11 @@ class TestTIFACompute:
         assert result.value == 0.0
         assert "error" in result.details
 
-    def test_compute_correct_ratio(self):
+    def test_compute_macro_average_per_image(self):
         metric = _make_tifa_metric()
-        metric._correct_count = 3
         metric._total_questions_count = 5
         metric._total_images_count = 2
+        metric._per_image_scores = [1.0, 0.2]
         result = metric.compute()
         assert result.value == pytest.approx(0.6)
 
@@ -176,12 +180,12 @@ class TestTIFACompute:
         metric = _make_tifa_metric()
         metric._total_images_count = 1
         metric._total_questions_count = 0
+        metric._per_image_scores = [None]
         result = metric.compute()
         assert result.value == 0.0
 
     def test_compute_includes_per_image_scores(self):
         metric = _make_tifa_metric()
-        metric._correct_count = 2
         metric._total_questions_count = 2
         metric._total_images_count = 1
         metric._per_image_scores = [1.0]
@@ -191,11 +195,13 @@ class TestTIFACompute:
     def test_compute_name_is_tifa(self):
         metric = _make_tifa_metric()
         metric._total_images_count = 1
+        metric._per_image_scores = [1.0]
         result = metric.compute()
         assert result.name == "TIFA"
 
     def test_compute_includes_config(self):
         metric = _make_tifa_metric()
         metric._total_images_count = 1
+        metric._per_image_scores = [1.0]
         result = metric.compute()
         assert "config" in result.details

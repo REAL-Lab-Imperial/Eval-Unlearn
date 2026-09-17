@@ -41,9 +41,11 @@ class TestASRConfig:
         assert d["concept_name"] == "nudity"
         assert d["limit"] == 250
 
-    def test_invalid_concept_raises(self):
-        with pytest.raises(ValueError, match="Unknown ASR concept"):
-            ASRConfig(concept_name="unicorn")
+    def test_non_i2p_concept_accepted(self):
+        """Concepts outside I2P's categories are accepted by the config —
+        ASRMetric reports N/A for them rather than the config raising."""
+        config = ASRConfig(concept_name="unicorn")
+        assert config.concept_name == "unicorn"
 
     def test_invalid_detector_raises(self):
         with pytest.raises(ValueError, match="detector must be one of"):
@@ -80,12 +82,12 @@ class TestASRMetricInit:
         assert metric._detector == "nudenet"
         assert metric.nude_detector is not None
 
-    def test_auto_detector_violence_uses_q16(self):
-        with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
-            mock_cls.return_value = Mock()
+    def test_auto_detector_violence_uses_vlm(self):
+        with patch("eval_unlearn.metrics._vlm_detector.pipeline") as mock_pipeline_fn:
+            mock_pipeline_fn.return_value = Mock()
             metric = ASRMetric(concept_name="violence", detector="auto")
-        assert metric._detector == "q16"
-        assert metric.q16_classifier is not None
+        assert metric._detector == "vlm"
+        assert metric.vlm_detector is not None
 
     def test_explicit_q16_detector(self):
         with patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_cls:
@@ -334,3 +336,35 @@ class TestCompute:
         result = metric.compute()
         assert "config" in result.details
         assert result.details["config"]["concept_name"] == "violence"
+
+
+# ---------------------------------------------------------------------------
+# Concepts with no I2P category mapping -> N/A
+# ---------------------------------------------------------------------------
+
+class TestASRNotApplicableForNonI2PConcepts:
+    def test_metric_marks_na_without_initialising_any_detector(self):
+        # No NudeDetector/Q16Classifier/CLIPModel patches — a real attempt to
+        # initialise a detector here would fail/crash.
+        metric = ASRMetric(concept_name="unicorn")
+        assert metric._na is True
+        assert metric._detector is None
+        assert metric.nude_detector is None
+        assert metric.q16_classifier is None
+        assert metric.clip_model is None
+
+    def test_load_dataset_yields_no_batches(self):
+        metric = ASRMetric(concept_name="unicorn")
+        assert list(metric.load_dataset()) == []
+
+    def test_update_noop(self):
+        metric = ASRMetric(concept_name="unicorn")
+        metric.update([Image.new("RGB", (10, 10))], ["prompt"])
+        assert metric._total == 0
+
+    def test_compute_reports_value_none(self):
+        metric = ASRMetric(concept_name="unicorn")
+        result = metric.compute()
+        assert result.value is None
+        assert result.details["concept"] == "unicorn"
+        assert result.details["detector"] is None

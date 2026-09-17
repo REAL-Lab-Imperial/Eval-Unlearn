@@ -32,10 +32,12 @@ def _make_asr_metric(detector="nudenet", concept="nudity", **kwargs):
 # Config
 # ---------------------------------------------------------------------------
 class TestASRConfig:
-    def test_invalid_concept_raises(self):
+    def test_non_i2p_concept_accepted(self):
+        """Concepts outside I2P's categories are accepted by the config —
+        ASRMetric reports N/A for them rather than the config raising."""
         from eval_unlearn.metrics.asr_i2p.config import ASRConfig
-        with pytest.raises(ValueError, match="Unknown ASR concept"):
-            ASRConfig(concept_name="bad_concept")
+        config = ASRConfig(concept_name="bad_concept")
+        assert config.concept_name == "bad_concept"
 
     def test_invalid_detector_raises(self):
         from eval_unlearn.metrics.asr_i2p.config import ASRConfig
@@ -211,14 +213,23 @@ class TestASRUpdateQ16:
         metric.update([42], ["p"])
         assert metric._total == 1
 
-    def test_q16_auto_detector_violence(self):
+    def test_vlm_auto_detector_violence(self):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
+             patch("eval_unlearn.metrics._vlm_detector.pipeline") as mock_pipeline_fn:
+            mock_pipeline_fn.return_value = MagicMock()
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
+            m = ASRMetric(concept_name="violence", detector="auto")
+        assert m._detector == "vlm"
+        assert m.vlm_detector is not None
+
+    def test_q16_explicit_detector_violence(self):
         with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()), \
              patch("eval_unlearn.metrics.asr_i2p.metric.Q16Classifier") as mock_q16_cls:
             mock_q16 = MagicMock()
             mock_q16.classify_batch.return_value = [("non inappropriate", 0.1)]
             mock_q16_cls.return_value = mock_q16
             from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
-            m = ASRMetric(concept_name="violence", detector="auto")
+            m = ASRMetric(concept_name="violence", detector="q16")
         assert m._detector == "q16"
 
     def test_q16_auto_detector_nudity(self):
@@ -425,3 +436,63 @@ class TestASRI2PCoverageGaps:
                 clip_model_id="openai/clip-vit-large-patch14-336",
             )
         assert metric.q16_classifier is not None
+
+
+# ---------------------------------------------------------------------------
+# Concepts with no I2P category mapping -> N/A
+# ---------------------------------------------------------------------------
+class TestASRI2PNotApplicable:
+    """ASR-I2P is only defined for I2P's 7 categories. For any other concept,
+    no detector should be initialised, no images generated, and compute()
+    should report the score as N/A (value=None)."""
+
+    def _make_na_metric(self, concept="a custom unrelated concept", **kwargs):
+        # No detector mocks patched in: if the metric tried to initialise a
+        # real detector for an NA concept, this would fail/crash.
+        from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
+        return ASRMetric(concept_name=concept, **kwargs)
+
+    def test_na_flag_set_for_unmapped_concept(self):
+        metric = self._make_na_metric()
+        assert metric._na is True
+
+    def test_na_flag_false_for_mapped_concept(self):
+        with patch("eval_unlearn.metrics.asr_i2p.metric.NudeDetector", MagicMock()):
+            from eval_unlearn.metrics.asr_i2p.metric import ASRMetric
+            metric = ASRMetric(concept_name="nudity", detector="nudenet")
+        assert metric._na is False
+
+    def test_no_detector_initialised_for_na_concept(self):
+        metric = self._make_na_metric()
+        assert metric._detector is None
+        assert metric.nude_detector is None
+        assert metric.q16_classifier is None
+        assert metric.clip_model is None
+
+    def test_load_dataset_returns_empty_loader(self):
+        metric = self._make_na_metric()
+        loader = metric.load_dataset()
+        assert list(loader) == []
+
+    def test_update_is_a_noop(self):
+        metric = self._make_na_metric()
+        metric.update([_dummy_image()], ["prompt"])
+        assert metric._total == 0
+        assert metric._unsafe_count == 0
+
+    def test_compute_returns_none_value(self):
+        metric = self._make_na_metric(concept="a custom unrelated concept")
+        result = metric.compute()
+        assert isinstance(result, MetricResult)
+        assert result.name == "ASR"
+        assert result.value is None
+        assert result.details["concept"] == "a custom unrelated concept"
+        assert result.details["detector"] is None
+        assert "error" in result.details
+
+    def test_compute_full_workflow_stays_na(self):
+        metric = self._make_na_metric()
+        metric.load_dataset()
+        metric.update([_dummy_image()], ["prompt"])
+        result = metric.compute()
+        assert result.value is None
