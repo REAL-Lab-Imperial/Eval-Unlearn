@@ -1,8 +1,23 @@
 from .sld.wrapper import SLDTechnique
-from .uce.wrapper import UCETechnique
-from .concept_steerers.wrapper import ConceptSteerersTechnique
 from .free_run.wrapper import FreeRunTechnique
-from .mace.wrapper import MACETechnique
+
+try:
+    from .uce.wrapper import UCETechnique
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).warning("Could not register uce: %s", e)
+
+try:
+    from .concept_steerers.wrapper import ConceptSteerersTechnique
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).warning("Could not register concept_steerers: %s", e)
+
+try:
+    from .mace.wrapper import MACETechnique
+except Exception as e:
+    import logging
+    logging.getLogger(__name__).warning("Could not register mace: %s", e)
 
 try:
     from .saeuron.wrapper import SAeUronTechnique
