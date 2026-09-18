@@ -51,7 +51,7 @@ SLD is included in `eval-unlearn` directly and requires no extra install as it i
 
 ### 3. Metric packages.
 
-Most metrics are fairly lightweight and their implementation does not require any standalone dependencies. ASR I2P works out of the box for all supported I2P concepts. For adversarial evaluation, `asr_ring_a_bell` and `asr_mma_diffusion` use separate prompt generation techniques to discover adversarial prompts — these require additional packages to be installed.
+Most metrics are fairly lightweight and their implementation does not require any standalone dependencies. ASR I2P works out of the box for all 7 of I2P's built-in concepts (nudity, harassment, hate, illegal activity, self-harm, shocking, violence); for any other concept it reports N/A, since there's no I2P prompt set to evaluate it on. For adversarial evaluation, `asr_ring_a_bell` and `asr_mma_diffusion` use separate prompt generation techniques to discover adversarial prompts — these require additional packages to be installed. All four ASR metrics support arbitrary concepts beyond their built-in lists by auto-sourcing prompts and detecting via a VLM (see [ASR I2P](metrics/asr_i2p.md) for details) — this needs `eval-unlearn[asr]` for the `modelscope` dependency.
 
 From the cloned `Packages` directory (see step 2 above):
 
@@ -67,9 +67,10 @@ pip install -e Q16/
 Some metrics require additional dependencies:
 
 ```bash
-pip install "eval-unlearn[asr]"    # ASR — requires NudeNet
+pip install "eval-unlearn[asr]"    # ASR — requires NudeNet (nudity) and modelscope (VLM detection for any other concept)
 pip install "eval-unlearn[fid]"    # FID — requires torchvision
 pip install "eval-unlearn[coco]"   # COCO-based metrics — requires torchvision
+pip install "eval-unlearn[tifa]"   # TIFA — requires modelscope
 ```
 
 ### CUDA wheels

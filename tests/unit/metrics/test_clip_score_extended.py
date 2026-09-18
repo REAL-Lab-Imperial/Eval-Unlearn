@@ -123,7 +123,9 @@ class TestCLIPScoreUpdate:
         metric.update([_dummy_image()], ["a cat"])
         assert metric._evaluated_count == 1
         assert metric._total_count == 1
-        assert abs(metric._total_score - 30.0) < 1e-6
+        # float32 tensor math (cosine_similarity then *100) introduces ~1e-6
+        # rounding error at this magnitude; 1e-6 was too tight a tolerance.
+        assert abs(metric._total_score - 30.0) < 1e-4
 
     def test_update_none_image_skipped(self):
         metric = _make_clip_score_metric()

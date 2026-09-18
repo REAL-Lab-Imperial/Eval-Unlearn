@@ -38,13 +38,27 @@ Unlearning techniques modify or constrain Stable Diffusion to suppress specific 
 | UA-IRA | `ua_ira` | Unsafe concept alignment vs. retain concept alignment |
 | TIFA | `tifa` | Text-image faithfulness via VQA |
 
+All four ASR metrics work on any concept, not just the ones with a dedicated dataset.
+For concepts outside their built-in category lists, they auto-source target/seed prompts
+(borrowing from I2P where the concept overlaps one of its categories, or synthesizing
+generic templates otherwise) and default to a VLM-based detector — the same MPLUG model
+used by TIFA — that's asked directly whether the concept is present in each image, rather
+than falling back to a fixed nudity/inappropriate-content classifier.
+
 ---
 
 ## Leaderboard
 
-A live leaderboard ranking all supported techniques is hosted on Hugging Face Spaces:
+A live leaderboard ranking all supported techniques, plus an option to submit your own
+model and have it scored, is hosted on Hugging Face Spaces:
 
 **https://huggingface.co/spaces/REAL-Lab-Imperial/eval-unlearn**
+
+Besides browsing existing results, the Space now has a **submit & score** option: upload
+or point it at your own unlearning checkpoint and it runs the eval-unlearn metric suite
+against it, returning scores you can compare directly against the leaderboard — without
+needing to set up eval-unlearn locally. See the Space itself for the exact submission
+format it currently expects.
 
 The leaderboard displays results across all nine evaluation metrics and ranks techniques by a composite **BenchScore**:
 
@@ -64,7 +78,7 @@ Two variants are reported:
 
 The leaderboard ranks by the average of both variants.
 
-To reproduce the leaderboard results locally, run the full evaluation script:
+To reproduce the leaderboard results locally instead of submitting through the Space, run the full evaluation script:
 
 ```bash
 cd Packages/eval-unlearn
@@ -121,11 +135,14 @@ pip install -e Q16/
 ```
 
 ```bash
-# NudeNet (nudity ASR)
+# NudeNet (nudity ASR) + modelscope (VLM-based ASR for any other concept)
 pip install "eval-unlearn[asr]"
 
 # FID / COCO metrics
 pip install "eval-unlearn[fid,coco]"
+
+# TIFA (modelscope VQA model)
+pip install "eval-unlearn[tifa]"
 ```
 
 ### 4. Hugging Face authentication

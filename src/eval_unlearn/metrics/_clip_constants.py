@@ -5,7 +5,7 @@
 # from transformers in the context of concept detection and scoring.
 SUPPORTED_CLIP_MODELS = frozenset({
     "openai/clip-vit-base-patch16",
-     "openai/clip-vit-large-patch14",
+    "openai/clip-vit-base-patch32",
     "openai/clip-vit-large-patch14",
     "openai/clip-vit-large-patch14-336",
 })
