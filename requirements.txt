@@ -19,21 +19,21 @@
 -e ../packages/ca/
  
 # HuggingFace package installs (WARNING PROBLEMATIC CURRENTLY)
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=esd
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=mace
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=uce
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=saeuron
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=concept-steerers
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=safree
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=RING_A_BELL
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=mma_diff
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=advunlearn
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=p4d
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=Q16
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=ssd
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=cogfd
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=trasce
-# git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=ca
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=esd
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=mace
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=uce
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=saeuron
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=concept-steerers
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=safree
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=RING_A_BELL
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=mma_diff
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=advunlearn
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=p4d
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=Q16
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=ssd
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=cogfd
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=trasce
+# git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=ca
 # CUDA wheels
 --extra-index-url https://download.pytorch.org/whl/cu126
 

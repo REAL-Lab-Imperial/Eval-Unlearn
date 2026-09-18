@@ -21,13 +21,13 @@ pip install eval-unlearn
 
 ### 2. Install technique packages
 
-To ensure of a lightweight and clean package, the precise implementation of all unlearning techniques are in  seperate installable packages hosted on [Hugging Face](https://huggingface.co/datasets/Unlearningltd/Packages).
+To ensure of a lightweight and clean package, the precise implementation of all unlearning techniques are in  seperate installable packages hosted on [Hugging Face](https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages).
 
 Some packages bundle large weight files tracked via Git LFS. Installing via `pip install git+...` will give you a broken pointer file instead of the real weights. Clone the packages repo once and install editably:
 
 ```bash
-git clone https://huggingface.co/datasets/Unlearningltd/Packages
-cd Packages
+git clone https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages
+cd eval-unlearn-packages
 git lfs pull
 ```
 
@@ -53,7 +53,7 @@ SLD is included in `eval-unlearn` directly and requires no extra install as it i
 
 Most metrics are fairly lightweight and their implementation does not require any standalone dependencies. ASR I2P works out of the box for all 7 of I2P's built-in concepts (nudity, harassment, hate, illegal activity, self-harm, shocking, violence); for any other concept it reports N/A, since there's no I2P prompt set to evaluate it on. For adversarial evaluation, `asr_ring_a_bell` and `asr_mma_diffusion` use separate prompt generation techniques to discover adversarial prompts — these require additional packages to be installed. All four ASR metrics support arbitrary concepts beyond their built-in lists by auto-sourcing prompts and detecting via a VLM (see [ASR I2P](metrics/asr_i2p.md) for details) — this needs `eval-unlearn[asr]` for the `modelscope` dependency.
 
-From the cloned `Packages` directory (see step 2 above):
+From the cloned `eval-unlearn-packages` directory (see step 2 above):
 
 ```bash
 pip install -e p4d/

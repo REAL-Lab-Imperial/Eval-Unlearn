@@ -191,7 +191,7 @@ a header row and pass it as `seed_prompts_csv` with `enable_discovery=false`.
 
 !!! warning "Requires ring_a_bell package"
     `asr_ring_a_bell` requires the Ring-A-Bell package. Install with:
-    `pip install "git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=RING_A_BELL"`
+    `pip install "git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=RING_A_BELL"`
     Missing this package raises an `ImportError` at metric initialisation.
 
 !!! warning "Requires NudeNet for nudity"

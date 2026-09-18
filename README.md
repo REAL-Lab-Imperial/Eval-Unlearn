@@ -99,11 +99,11 @@ pip install eval-unlearn
 
 ### 2. Install technique packages
 
-Technique implementations are hosted on [Hugging Face](https://huggingface.co/datasets/Unlearningltd/Packages). Clone the repo once, pull LFS files, then install only what you need:
+Technique implementations are hosted on [Hugging Face](https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages). Clone the repo once, pull LFS files, then install only what you need:
 
 ```bash
-git clone https://huggingface.co/datasets/Unlearningltd/Packages
-cd Packages
+git clone https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages
+cd eval-unlearn-packages
 git lfs pull
 ```
 
@@ -125,7 +125,7 @@ SLD is built into eval-unlearn via the `diffusers` library and requires no extra
 
 ### 3. Install metric packages
 
-From the cloned `Packages` directory (see step 2 above):
+From the cloned `eval-unlearn-packages` directory (see step 2 above):
 
 ```bash
 pip install -e p4d/

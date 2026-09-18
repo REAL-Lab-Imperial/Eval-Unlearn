@@ -87,7 +87,7 @@ the correct encoder automatically.
 
 !!! warning "Requires mma_diff package"
     MMA-Diffusion requires the mma_diff package. Install with:
-    `pip install "git+https://huggingface.co/datasets/Unlearningltd/Packages#subdirectory=mma_diff"`
+    `pip install "git+https://huggingface.co/datasets/REAL-Lab-Imperial/eval-unlearn-packages#subdirectory=mma_diff"`
     Missing this package raises an `ImportError` at metric initialisation.
 
 !!! warning "Requires modelscope for VLM detection"
