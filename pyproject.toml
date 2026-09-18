@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eval-unlearn"
-version = "1.1.0"
+version = "1.1.1"
 description = "Unlearning Benchmark for Text-to-Image Models"
 readme = {file = "README.md", content-type = "text/markdown"}
 requires-python = ">=3.11"
